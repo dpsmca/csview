@@ -2,8 +2,8 @@
 
 CALL_DIR="${PWD}"
 MYNAME="${0}"
-MYPATH="realpath ${MYNAME}"
-BASE_DIR="dirname ${MYPATH}"
+MYPATH="$(realpath ${MYNAME})"
+BASE_DIR="$(dirname ${MYPATH})"
 VENV_HOME="${MYPATH}/venv"
 VENV_SCRIPT="${VENV_HOME}/bin/activate"
 DEPS_FILE="requirements.txt"
