@@ -483,3 +483,9 @@ $RECYCLE.BIN/
 
 # JetBrains Rider metadata
 .idea
+
+# Local wrappers created by install scripts
+/csview
+/csview.bat
+/csview.sh
+
