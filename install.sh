@@ -173,6 +173,7 @@ EOF
 
 chmod +x "${SCRIPT}"
 chmod +x "${WRAPPER}"
+ln -s "${WRAPPER_NAME}" "${PROGRAM_NAME}"
 
 printf "\n%sWrapper script created at '%s'%s\n" "${CYAN}" "${WRAPPER}" "${NC}"
 printf "\n%s%s successfully installed at '%s'%s\n\n" "${GREEN}" "${PROGRAM_NAME}" "${BASE_DIR}" "${NC}"
