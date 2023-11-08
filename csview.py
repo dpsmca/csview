@@ -341,7 +341,7 @@ if __name__ == "__main__":
     positional_args = parser.add_argument_group(colored("Required options", GROUP_COLOR))
     query_args = parser.add_argument_group(colored("General options", GROUP_COLOR))
     meta_args = parser.add_argument_group(colored("Testing, debugging, and miscellaneous parameters", GROUP_COLOR))
-    positional_args.add_argument('input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path", HELP_COLOR))
+    positional_args.add_argument('arg_input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path", HELP_COLOR))
     # query_args.add_argument('-i', '--input', required=False, type=str, dest="arg_input_file", default=None, help=colored("Input TSV/CSV file", HELP_COLOR))
     query_args.add_argument('-D', '--delimiter', required=False, type=str, dest="arg_delimiter", default=None, help=colored("Delimiter character used by input file if not ',' or tab", HELP_COLOR))
     query_args.add_argument('-s', '--separator', required=False, type=str, dest="arg_separator", default=None, help=colored(description_separator, HELP_COLOR))
