@@ -10,6 +10,7 @@ call :setESC
 set PROGRAM_NAME=csview
 set WRAPPER_NAME=%PROGRAM_NAME%.bat
 set SCRIPT_NAME=%PROGRAM_NAME%.py
+set CURRENT_DIR=%CD%
 set CALL_COMMAND=%~f0
 set BASE_DIR=%~dp0
 set CALL_STEM=%~n0
@@ -64,6 +65,7 @@ if %DEBUGMODE% EQU 1 (
     call:logdebug "WRAPPER_NAME=%WRAPPER_NAME%"
     call:logdebug "SCRIPT_NAME=%SCRIPT_NAME%"
     call:logdebug "CALL_COMMAND=%CALL_COMMAND%"
+    call:logdebug "CURRENT_DIR=%CURRENT_DIR%"
     call:logdebug "BASE_DIR=%BASE_DIR%"
     call:logdebug "CALL_STEM=%CALL_STEM%"
     call:logdebug "MYNAME=%MYNAME%"
@@ -76,6 +78,11 @@ if %DEBUGMODE% EQU 1 (
     call:logdebug "DEPS_PATH=%DEPS_PATH%"
     call:logdebug "============= DEBUG END ============="
     echo.
+)
+
+echo.
+if [%CURRENT_DIR%]!=[%BASE_DIR%] (
+  cd "%BASE_DIR%"
 )
 
 echo.
