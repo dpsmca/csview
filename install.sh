@@ -26,6 +26,7 @@ export GETOPT="$(command -v ggetopt || command -v getopt)"
 export PRINTF="$(command -v gprintf || command -v printf)"
 export CHMOD="$(command -v gchmod || command -v chmod)"
 export TOUCH="$(command -v gtouch || command -v touch)"
+export UNAME="$(command -v guname || command -v uname)"
 export XARGS="$(command -v gxargs || command -v xargs)"
 export DATE="$(command -v gdate || command -v date)"
 export GREP="$(command -v ggrep || command -v grep)"
@@ -655,7 +656,13 @@ else
       exit 1
     fi
   else
-    if [[ -n "${ICON}" && -s "${ICON}" ]]; then
+    SYSTEM="Linux"
+    if [[ -n "${UNAME}" ]]; then
+      SYSTEM="$(${UNAME})"
+    fi
+    SYSTEM="${SYSTEM,,}"
+    if [[ -n "${ICON}" && -s "${ICON}" && "${SYSTEM}" == "darwin" ]]; then
+      # Build using an icon if we're on macOS and there is an icon available
       log "\nBuilding executable (with icon) for destination '${COMPILED}' ..."
       pyinstaller -i "${ICON}" -F "${SCRIPT}"
       STATUS="${?}"
@@ -664,6 +671,7 @@ else
         exit ${STATUS}
       fi
     else
+      # Don't build using an icon if we're not on macOS or there is no icon available
       log "\nBuilding executable for destination '${COMPILED}' ..."
       pyinstaller -F "${SCRIPT}"
       STATUS="${?}"
