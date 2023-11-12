@@ -335,6 +335,11 @@ __pycache__/
 *.pyc
 venv*
 
+# Local pyinstaller artifacts
+/*.spec
+/dist
+/build
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config
