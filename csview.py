@@ -10,6 +10,7 @@ try:
     import ntpath
     from typing import Any, AnyStr, Union, Type
     from termcolor import colored, cprint
+    import colorama
     from pypager.source import StringSource, FormattedTextSource
     from pypager.pager import Pager
     from prompt_toolkit import ANSI
@@ -42,6 +43,7 @@ DEFAULT_QUOTE_EMPTY = False
 #
 # Available attributes:
 #     bold, dark, underline, blink, reverse, concealed.
+colorama.init()
 # colors = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'grey', 'light_red', 'light_green']
 colors = ['red', 'light_green', 'yellow', 'blue', 'magenta', 'cyan', 'light_red', 'yellow', 'light_cyan', 'white']
 color_comment = "dark_grey"
