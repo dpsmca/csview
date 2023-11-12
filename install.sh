@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
 TERM="xterm-256color"
 
 PROGRAM_NAME="csview"
