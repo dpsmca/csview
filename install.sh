@@ -9,6 +9,7 @@ PROGRAM_TITLE="CSView"
 # DEFAULTS
 ##################################################
 DRY_RUN="0"
+BUILD_EXE="1"
 REINSTALL="0"
 DEBUG="0"
 
@@ -84,6 +85,11 @@ SCRIPT_NAME="${PROGRAM_NAME}.py"
 WRAPPER="${BASE_DIR}/${WRAPPER_NAME}"
 SCRIPT="${BASE_DIR}/${SCRIPT_NAME}"
 SYMLINK="${BASE_DIR}/${SYMLINK_NAME}"
+COMPILED_NAME="${PROGRAM_NAME}"
+COMPILED_DIR_NAME="dist"
+COMPILED_DIR="${BASE_DIR}/${COMPILED_DIR_NAME}"
+COMPILED_RESULT="${COMPILED_DIR}/${COMPILED_NAME}"
+COMPILED="${BASE_DIR}/${COMPILED_NAME}"
 
 ##################################################
 # Utility functions
@@ -205,7 +211,8 @@ ${BOLD}${INSTALL_SCRIPT}${NC} ${MAGENTA}[options]${NC}
 
 ${BLUE}${UL}OPTIONS:${NC}
     ${BOLD}${BRIGHTYELLOW}-p${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Path to Python executable to use. Defaults to first 'python' command in PATH${NC}
-    ${BOLD}${BRIGHTYELLOW}-r${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Reinstall (delete current Python virtual environment and re-create it)${NC}
+    ${BOLD}${BRIGHTYELLOW}-r${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Reinstall (delete and re-create Python virtual environment, binary, wrapper script, etc.)${NC}
+    ${BOLD}${BRIGHTYELLOW}-x${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Do not build single executable file (will try creating a symlink to wrapper script instead)${NC}
     ${BOLD}${BRIGHTYELLOW}-D${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Dry run: show where files would be installed, wrapper script contents, etc.${NC}
     ${BOLD}${BRIGHTYELLOW}-d${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Show debugging and intermediate info while running this script${NC}
     ${BOLD}${BRIGHTYELLOW}-h${NC}   ${BLUE}[optional]${NC}  ${YELLOW}Help (show this message)${NC}
@@ -219,6 +226,9 @@ ${BLUE}${UL}EXAMPLES:${NC}
 
     ${GREY}# Install using a specific Python interpreter${NC}
     ${POWDERBLUE}${INSTALL_SCRIPT} -p /usr/local/bin/python/3.11.4/bin/python${NC}
+
+    ${GREY}# Do not build a single executable binary file; use symlink to wrapper script instead${NC}
+    ${POWDERBLUE}${INSTALL_SCRIPT} -x${NC}
 
     ${GREY}# Install ${PROGRAM_NAME} with debugging output${NC}
     ${POWDERBLUE}${INSTALL_SCRIPT} -d${NC}
@@ -237,12 +247,13 @@ function usage() {
 # PARSE INPUT
 ##################################################
 OPT_PYTHON=""
-while ${GETOPTS} "p:rDdh" OPTION
+while ${GETOPTS} "p:rxDdh" OPTION
 do
     case $OPTION in
         p) OPT_PYTHON="${OPTARG}" ;;
-        D) DRY_RUN="1" ;;
         r) REINSTALL="1" ;;
+        x) BUILD_EXE="0" ;;
+        D) DRY_RUN="1" ;;
         d) DEBUG="1" ;;
         h) usage ; exit 0 ;;
         ?) ${PRINTF} "%sInvalid option: '-%s'%s\n\n" "${BOLD}${RED}" "${OPTION}" "${NC}" ; usage ; exit 1 ;;
@@ -356,6 +367,36 @@ if [[ "${REINSTALL}" -eq 1 ]]; then
     fi
   else
     logDbg "Symlink to wrapper script does not exist, so it will not be removed"
+  fi
+
+  logDbg "Checking for compiled single executable file ${COMPILED_NAME} ..."
+  if [[ -x "${COMPILED}" ]]; then
+    CMD1="${RM} -f \"${COMPILED:-safety}\""
+    if [[ "${DRY_RUN}" -eq 1 ]]; then
+      log "DRY RUN: Not actually removing compiled executable at '${COMPILED}'"
+      logDbg "Command to remove compiled executable would be: ${CMD1}"
+    else
+      logDbg "Compiled single executable exists, removing with command: ${CMD1}"
+      ${RM} -f "${COMPILED:-safety}"
+      logDbg "Compiled single executable removed"
+    fi
+  else
+    logDbg "Compiled binary executable does not exist, so it will not be removed"
+  fi
+
+  logDbg "Checking for existing build directory ${COMPILED_DIR} ..."
+  if [[ -d "${COMPILED_DIR}" ]]; then
+    CMD1="${RM} -rf \"${COMPILED_DIR:-safety}\""
+    if [[ "${DRY_RUN}" -eq 1 ]]; then
+      log "DRY RUN: Not actually removing existing build direcotry at '${COMPILED_DIR}'"
+      logDbg "Command to remove existing build directory would be: ${CMD1}"
+    else
+      logDbg "Build directory exists, removing with command: ${CMD1}"
+      ${RM} -rf "${COMPILED_DIR:-safety}"
+      logDbg "Existing build directory removed"
+    fi
+  else
+    logDbg "Build directory does not exist, so it will not be removed"
   fi
 
   logDbg "Checking for wrapper script '${WRAPPER}' ..."
@@ -496,7 +537,11 @@ EOF
 if [[ "${DRY_RUN}" -eq 1 ]]; then
   log "DRY RUN: Wrapper file will be: \"${WRAPPER}\""
   logDbg "DRY RUN: Wrapper contents:\n${WRAPPER_CONTENTS}"
-  log "DRY RUN: Symlink to wrapper script will be: \"${SYMLINK}\""
+  if [[ "${BUILD_EXE}" -ne 1 ]]; then
+    log "DRY RUN: Symlink to wrapper script will be: \"${SYMLINK}\""
+  else
+    log "DRY RUN: Compiled single executable will be: \"${COMPILED}\""
+  fi
   log "DRY RUN: finished"
 else
   ${PRINTF} "%s\n" "${WRAPPER_CONTENTS}" > "${WRAPPER}"
@@ -504,12 +549,60 @@ else
   ${CHMOD} +x "${WRAPPER}"
   log "Wrapper script created at '${WRAPPER}'"
 
-  log "\nCreating symlink to wrapper script at '${SYMLINK}' ..."
-  ${LN} -sf "${WRAPPER_NAME}" "${SYMLINK_NAME}"
-  log "Symlink to wrapper script created at '${SYMLINK}'"
+  if [[ "${BUILD_EXE}" -ne 1 ]]; then
+    log "\nCreating symlink to wrapper script at '${SYMLINK}' ..."
+    if [[ -e "${SYMLINK}" ]]; then
+      log "Removing existing file '${SYMLINK}' ..."
+      ${RM} -f "${SYMLINK}"
+      if [[ -e "${SYMLINK}" ]]; then
+        logErr "Could not remove existing file '${SYMLINK}'"
+        exit 1
+      else
+        log "Existing file removed: '${SYMLINK}'"
+      fi
+    fi
+    ${LN} -sf "${WRAPPER_NAME}" "${SYMLINK_NAME}"
+    if [[ -e "${SYMLINK}" && -L "${SYMLINK}" ]]; then
+      log "Symlink to wrapper script created at '${SYMLINK}'"
+    else
+      logErr "Symlink to wrapper script was not created successfully at '${SYMLINK}'"
+      exit 1
+    fi
+  else
+    log "\nBuilding executable file '${COMPILED}' ..."
+    pyinstaller -F "${SCRIPT}"
+    STATUS="${?}"
+    if [[ "${STATUS}" -ne 0 ]]; then
+      logErr "Building executable file threw error ${STATUS}"
+      exit ${STATUS}
+    fi
+    if [[ -x "${COMPILED_RESULT}" ]]; then
+      log "Executable built successfully, copying to '${COMPILED}'"
+      ${CP} -af "${COMPILED_RESULT}" "${COMPILED}"
+      if [[ -x "${COMPILED}" ]]; then
+        log "Executable file created at '${COMPILED}'"
+      else
+        logErr "Executable file built successfully, but failure occurred while copying to final destination '${COMPILED}'"
+        exit 1
+      fi
+    else
+      logErr "Building executable apparently succeeded, but the result was not found: '${COMPILED_RESULT}'"
+      exit 1
+    fi
+  fi
 
   log ""  # Blank line
   logSuccess "${PROGRAM_TITLE} installed in '${BASE_DIR}'"
-  logSuccess "Add directory to PATH, or run with command '${SYMLINK}' or '${WRAPPER}'"
-  logSuccess "For usage or help: '${SYMLINK_NAME} -h'\n"
+  logSuccess "${PROGRAM_TITLE} wrapper script created at: '${WRAPPER}'"
+  if [[ "${BUILD_EXE}" -ne 1 ]]; then
+    logSuccess "${PROGRAM_TITLE} symlink to wrapper script created at: '${SYMLINK}'"
+    logSuccess "Run ${PROGRAM_TITLE} with command '${SYMLINK}' or '${WRAPPER}'"
+    logSuccess "Or add current directory to PATH to run from anywhere: '${BASE_DIR}'"
+    logSuccess "For usage or help: '${SYMLINK_NAME} -h'\n"
+  else
+    logSuccess "${PROGRAM_TITLE} executable built at: '${COMPILED}'"
+    logSuccess "Run ${PROGRAM_TITLE} with command '${COMPILED}' or '${WRAPPER}'"
+    logSuccess "Or add current directory to PATH to run from anywhere: '${BASE_DIR}'"
+    logSuccess "For usage or help: '${COMPILED_NAME} -h'\n"
+  fi
 fi
