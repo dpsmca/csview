@@ -4,14 +4,18 @@ import sys
 import os
 import csv
 # import pandas as pd
-import ntpath
 
-import argparse
-from typing import Any, AnyStr, Union, Type
-from termcolor import colored, cprint
-from pypager.source import StringSource, FormattedTextSource
-from pypager.pager import Pager
-from prompt_toolkit import ANSI
+try:
+    import argparse
+    import ntpath
+    from typing import Any, AnyStr, Union, Type
+    from termcolor import colored, cprint
+    from pypager.source import StringSource, FormattedTextSource
+    from pypager.pager import Pager
+    from prompt_toolkit import ANSI
+except ImportError as e:
+    print(f"ERROR: required packages are not installed, please run the installer or 'pip install -r requirements.txt'")
+    raise ImportError(e)
 
 
 PROGRAM_NAME = "csview"
