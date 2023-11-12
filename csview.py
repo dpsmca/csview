@@ -24,8 +24,10 @@ DEFAULT_INPUT = "/dev/stdin"
 DEFAULT_SEPARATOR = " "
 PADDING_LEFT = 0
 PADDING_RIGHT = 2
+DEFAULT_PRINT_OUTPUT = False
 DEFAULT_BOLD = False
-
+DEFAULT_PLAIN_TEXT = False
+DEFAULT_QUOTE_EMPTY = False
 # Define a list of colors to be used for the columns.
 # Available text colors:
 #     black, red, green, yellow, blue, magenta, cyan, white,
