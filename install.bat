@@ -9,6 +9,7 @@ call :setESC
 
 set PROGRAM_NAME=csview
 set WRAPPER_NAME=%PROGRAM_NAME%.bat
+set COMPILED_NAME=%PROGRAM_NAME%.exe
 set SCRIPT_NAME=%PROGRAM_NAME%.py
 set CURRENT_DIR=%CD%
 set CALL_COMMAND=%~f0
@@ -22,9 +23,13 @@ set VENV_SCRIPT=%VENV_HOME%\Scripts\activate.bat
 set VENV_DEACTIVATE=%VENV_HOME%\Scripts\deactivate.bat
 set DEPS_FILE=requirements.txt
 set DEPS_PATH=%BASE_DIR%\%DEPS_FILE%
+set COMPILED_DIR_NAME=dist
+set COMPILED_DIR=%BASE_DIR%\%COMPILED_DIR_NAME%
+set COMPILED_RESULT=%COMPILED_DIR%\%COMPILED_NAME%
 
 set WRAPPER=%BASE_DIR%%WRAPPER_NAME%
 set SCRIPT=%BASE_DIR%%SCRIPT_NAME%
+set COMPILED=%BASE_DIR%\%COMPILED_NAME%
 
 set DEBUGMODE=0
 
@@ -76,6 +81,12 @@ if %DEBUGMODE% EQU 1 (
     call:logdebug "VENV_DEACTIVATE=%VENV_DEACTIVATE%"
     call:logdebug "DEPS_FILE=%DEPS_FILE%"
     call:logdebug "DEPS_PATH=%DEPS_PATH%"
+    call:logdebug "COMPILED_DIR_NAME=%COMPILED_DIR_NAME%"
+    call:logdebug "COMPILED_DIR=%COMPILED_DIR%"
+    call:logdebug "COMPILED_RESULT=%COMPILED_RESULT%"
+    call:logdebug "WRAPPER=%WRAPPER%"
+    call:logdebug "SCRIPT=%SCRIPT%"
+    call:logdebug "COMPILED=%COMPILED%"
     call:logdebug "============= DEBUG END ============="
     echo.
 )
@@ -174,7 +185,27 @@ echo. >> %WRAPPER%
 call:loginfo "Wrapper script created: %WRAPPER%"
 
 echo.
+call:loginfo "Building executable at %COMPILED% ..."
+pyinstaller -F %SCRIPT_NAME%
+if ERRORLEVEL 1 (
+    call:logerr "Building executable threw error %ERRORLEVEL%"
+    goto :PROBLEM
+)
+if NOT EXIST %COMPILED_RESULT% (
+    call:logerr "Building executable apparently succeeded, but could not find result %COMPILED_RESULT%"
+    goto :PROBLEM
+)
+copy /y %COMPILED_RESULT% %COMPILED%
+if NOT EXIST %COMPILED% (
+    call:logerr "Could not copy executable to %COMPILED%"
+    goto :PROBLEM
+)
+call:loginfo "Executable created: %COMPILED%"
+
 call:logsuccess "%PROGRAM_NAME% has been set up successfully"
+call:logsuccess "Run with python command: python %SCRIPT%"
+call:logsuccess "Or with wrapper script: %WRAPPER%"
+call:logsuccess "Or with executable file: %COMPILED%"
 
 GOTO :END
 
