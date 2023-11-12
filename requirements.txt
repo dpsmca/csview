@@ -1,5 +1,6 @@
 # Dependencies for CSView
-# Must all be installed
+# The system-specific install script will install these
+
 argparse
 colorama
 termcolor
