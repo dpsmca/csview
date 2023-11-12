@@ -146,27 +146,70 @@ function titleCase() {
 
 function check_packages() {
   # Check for required Python packages
+  local REQUIREMENTS_FILE
+  local -a PACKAGES=()
   local CMD1
-  local PKG_STATUS
-  CMD1="python3 -c \"import termcolor\" 2>/dev/null"
-  logDbg "check_packages: checking for packages with command: ${CMD1}"
-  python3 -c "import termcolor" 2>/dev/null
-  PKG_STATUS="${?}"
-  logDbg "check_packages: package check command returned status ${PKG_STATUS}"
-  if [[ "${PKG_STATUS}" -ne 0 ]]; then
-    return 1
+  local PKG_STATUS=0
+  local IDX=0
+
+  REQUIREMENTS_FILE="${1}"
+  if [[ -z "${REQUIREMENTS_FILE}" ]]; then
+    logErr "check_packages: must provide a file containing list of packages"
+    exit 1
   fi
+  if [[ ! -s "${REQUIREMENTS_FILE}" ]]; then
+    logErr "check_packages: cannot find packages file '${REQUIREMENTS_FILE}'"
+    exit 1
+  fi
+  mapfile -t TMP_PACKAGES < "${REQUIREMENTS_FILE}"
+  for line in "${TMP_PACKAGES[@]}"; do
+    if [[ "${line}" =~ ^# ]]; then
+      continue
+    else
+      PACKAGES+=( "${line}" )
+    fi
+  done
+
+  for pkg in "${PACKAGES[@]}"; do
+    IDX="$(( IDX + 1))"
+    CMD1="python3 -c \"import ${pkg}\" 2>/dev/null"
+    logDbg "check_packages: checking for package ${IDX} (${pkg}) with command: ${CMD1}"
+    python3 -c "import ${pkg}" 2>/dev/null
+    PKG_STATUS="${?}"
+    logDbg "check_packages: package check command for package ${IDX} (${pkg}) returned status ${PKG_STATUS}"
+    if [[ "${PKG_STATUS}" -ne 0 ]]; then
+      return 1
+    fi
+  done
   return 0
 }
 
 function install_packages() {
   # Packages need to be installed
   # WARNING: Assumes virtual environment has been activated!
+  local REQUIREMENTS_FILE
+  local REQUIREMENTS_PATH
   local CMD1
   local CMD2
   local PIP
   local PIP_STATUS
-  cd "${BASE_DIR}"
+
+  REQUIREMENTS_FILE="${DEPS_FILE}"
+  REQUIREMENTS_PATH="${BASE_DIR}/${DEPS_FILE}"
+  if [[ -n "${1}" ]]; then
+    REQUIREMENTS_FILE="${1}"
+    REQUIREMENTS_PATH="$(${REALPATH} "${REQUIREMENTS_FILE}")"
+  fi
+  cd "${BASE_DIR}" || { logErr "install_packages: could not change to install directory '${BASE_DIR}'" ; exit 1 ; }
+  if [[ -z "${REQUIREMENTS_FILE}" ]]; then
+    logErr "install_packages: no packages file found"
+    exit 1
+  fi
+  if [[ ! -s "${REQUIREMENTS_PATH}" ]]; then
+    logErr "install_packages: could not find packages in file '${REQUIREMENTS_PATH}'"
+    exit 1
+  fi
+
   # PIP="${PYTHON3_HOME}/bin/pip3"
   PIP="$(command -v pip)"
   if [[ ! -x "${PIP}" ]]; then
@@ -182,9 +225,9 @@ function install_packages() {
     logErr "ERROR: Could not upgrade pip before installing required packages from: '${DEPS_PATH}'"
     exit 1
   fi
-  CMD2="${PIP} install -r \"${DEPS_FILE}\""
+  CMD2="${PIP} install -r \"${REQUIREMENTS_PATH}\""
   logDbg "install_packages: installing with command ${CMD2}"
-  ${PIP} install -r "${DEPS_FILE}"
+  ${PIP} install -r "${REQUIREMENTS_PATH}"
   PIP_STATUS="${?}"
   logDbg "install_packages: package install command returned status ${PIP_STATUS}"
   if [[ "${PIP_STATUS}" -ne 0 ]]; then
@@ -464,12 +507,12 @@ if [[ "${DRY_RUN}" -ne 1 ]]; then
   log "Python virtual environment activated successfully"
 
   log "Checking existence of required Python packages ..."
-  check_packages
+  check_packages "${DEPS_PATH}"
   STATUS="${?}"
   if [[ "${STATUS}" -ne 0 ]]; then
     # Packages need to be installed
     log "Required packages not installed, installing them ..."
-    install_packages
+    install_packages "${DEPS_PATH}"
     STATUS="${?}"
     if [[ "${STATUS}" -ne 0 ]]; then
       logErr "ERROR: Python package installation failed"
@@ -482,7 +525,7 @@ if [[ "${DRY_RUN}" -ne 1 ]]; then
   fi
 
   logDbg "Re-checking existene of required Python packages ..."
-  check_packages
+  check_packages "${DEPS_PATH}"
   STATUS="${?}"
   if [[ "${STATUS}" -ne 0 ]]; then
     logErr "ERROR: Python package installation succeeded, but packages still cannot be imported."
@@ -500,7 +543,9 @@ fi
 DEPLOY_TIME="$(${DATE} -Isecond)"
 DEPLOY_USER="$(${ECHO} "${USER}")"
 
-log "\nCreating wrapper script at '${WRAPPER}' ..."
+if [[ "${DRY_RUN}" -ne 1 ]]; then
+  log "\nCreating wrapper script at '${WRAPPER}' ..."
+fi
 
 ${READ} -r -d '' WRAPPER_CONTENTS <<EOF
 #!/usr/bin/env bash
