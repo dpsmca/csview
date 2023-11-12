@@ -282,14 +282,14 @@ for /f "tokens=* usebackq" %%i in (%PACKAGES%) do (
     set LINE=%%i
     call:trim TRIMMED !LINE!
     if [!TRIMMED!]==[] (
-        :: trimmed line is empty, do nothing
+        :: trimmed line is empty, ignore it
         echo. >NUL
     ) else (
         :: trimmed lines that begin with # are comments and should be skipped
         set CHAR1=!TRIMMED:~0,1!
         if /i "!CHAR1!"=="#" (
             :: trimmed line is a comment, ignore it
-            @echo. >NUL
+            echo. >NUL
         ) else (
             :: trimmed line is a package name, check if the package exists
             call:logdebug "check_packages: checking package !TRIMMED! ..."
