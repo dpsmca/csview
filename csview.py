@@ -17,8 +17,8 @@ except ImportError as e:
     print(f"ERROR: required packages are not installed, please run the installer or 'pip install -r requirements.txt'")
     raise ImportError(e)
 
-
-PROGRAM_NAME = "csview"
+PROGRAM_TITLE = "CSView"
+PROGRAM_NAME = PROGRAM_TITLE.lower()
 VERSION = "1.0.0"
 DEFAULT_INPUT = "/dev/stdin"
 DEFAULT_SEPARATOR = " "
@@ -103,8 +103,11 @@ def bad_string(value: Any) -> bool:
 
 
 # Function to wrap the text with the appropriate color
-def colorize(text, color):
-    return colored(text, color, attrs=['bold'])
+def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD):
+    if bold:
+        return colored(text, color, attrs=['bold'])
+    else:
+        return colored(text, color)
 
 
 def get_term_size(size_type: str = "all") -> int:
@@ -333,13 +336,14 @@ def generate_paged_content(file_lines: list[str]) -> str:
 
 if __name__ == "__main__":
     '''
-    This script outputs a CSV/TSV file with aligned and colorized columns.
+    CSView: Given a CSV/TSV filename (or CSV/TSV content), display or output it with aligned and colorized columns.
     '''
 
     HELP_COLOR = "blue"
     DYN_HELP_COLOR = "blue"
     GROUP_COLOR = "cyan"
-    DESCRIPTION_COLOR = "green"
+    # DESCRIPTION_COLOR = "light_magenta"
+    DESCRIPTION_COLOR = "yellow"
 
     version_docstring = PROGRAM_NAME
     version_docstring += f" v{VERSION} "
@@ -352,7 +356,7 @@ if __name__ == "__main__":
     else:
         description_separator += f"\"{DEFAULT_SEPARATOR}\""
 
-    program_docstring = colored(f"Output a CSV/TSV file with aligned and colorized columns", DESCRIPTION_COLOR)
+    program_docstring = colored(f"{PROGRAM_TITLE}: Given a CSV/TSV file (or file contents), display it with aligned and colorized columns, or output it for further processing.", DESCRIPTION_COLOR, attrs=["bold"])
     parser = argparse.ArgumentParser(description=program_docstring, add_help=False)
     positional_args = parser.add_argument_group(colored("Required options", GROUP_COLOR))
     query_args = parser.add_argument_group(colored("General options", GROUP_COLOR))
