@@ -220,9 +220,38 @@ for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1)
 exit /b 0
 
 
+:trim
+SetLocal EnableDelayedExpansion
+set Params=%*
+for /f "tokens=1*" %%a in ("!Params!") do EndLocal & set %1=%%b
+exit /b 0
+
+
+:check_package
+:: Checks to see if a single Python package is installed
+:: %~1: name of the package to be checked
+:: ERRORLEVEL: 0 if package is installed, 1 if not
+set PKG=%~1
+python -c "import %PKG%" 2>NUL
+IF ERRORLEVEL 1 (
+    call:logdebug "check_package: could not import !TRIMMED!, checking if non-module package ..."
+    python -c "import subprocess ; available = not(subprocess.run(['pip', 'show', '%PKG%'], capture_output=True, check=True))" 2>NUL
+    IF ERRORLEVEL 1 (
+        call:logdebug "check_package: %PKG% is not installed"
+        exit /b 1
+    ) else (
+        call:logdebug "check_package: %PKG% is installed according to pip"
+    )
+) else (
+    call:logdebug "check_package: %PKG% found"
+)
+exit /b 0
+
+
 :check_packages
-:: -- Checks for required Python packages by trying to import each one
-:: -- %~1: full path to requirements.txt file
+:: Checks for required Python packages by trying to import each one
+:: %~1: full path to requirements.txt file
+:: ERRORLEVEL: 0 if all packages are installed, 1 if not
 set PACKAGES=%~1
 if [%PACKAGES%]==[""] (
     call:logerr "check_packages: must provide path to a file containing list of packages"
@@ -232,15 +261,36 @@ if not exist %PACKAGES% (
     call:logerr "check_packages: could not find packages file %PACKAGES%"
     exit /b 1
 )
-for /f %%i in (%PACKAGES%) do (
-    python -c "import %%i" 2>NUL
-    IF ERRORLEVEL 1 (
-        call:logdebug "check_packages: package %%i not installed"
-        exit /b 1
+
+set /a c=0
+setlocal EnableDelayedExpansion
+for /f "tokens=* usebackq" %%i in (%PACKAGES%) do (
+    set /a c=c+1
+    set LINE=%%i
+    call:trim TRIMMED !LINE!
+    if [!TRIMMED!]==[] (
+        :: trimmed line is empty, do nothing
+        echo. >NUL
     ) else (
-        call:logdebug "check_packages: package %%i installed"
+        :: trimmed lines that begin with # are comments and should be skipped
+        set CHAR1=!TRIMMED:~0,1!
+        if /i "!CHAR1!"=="#" (
+            :: trimmed line is a comment, ignore it
+            @echo. >NUL
+        ) else (
+            :: trimmed line is a package name, check if the package exists
+            call:logdebug "check_packages: checking package !TRIMMED! ..."
+            call:check_package !TRIMMED!
+            IF ERRORLEVEL 1 (
+                call:logdebug "check_packages: !TRIMMED! not installed"
+                exit /b 1
+            ) else (
+                call:logdebug "check_packages: !TRIMMED! found"
+            )
+        )
     )
 )
+endlocal
 exit /b 0
 
 :loginfo
