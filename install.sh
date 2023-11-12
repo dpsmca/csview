@@ -81,6 +81,10 @@ VENV_HOME="${BASE_DIR}/venv"
 VENV_SCRIPT="${VENV_HOME}/bin/activate"
 DEPS_FILE="requirements.txt"
 DEPS_PATH="${BASE_DIR}/${DEPS_FILE}"
+RESOURCES_DIR_NAME="resources"
+RESOURCES_DIR="${BASE_DIR}/${RESOURCES_DIR_NAME}"
+ICON_NAME="${PROGRAM_NAME}.icns"
+ICON="${RESOURCES_DIR}/${ICON_NAME}"
 WRAPPER_NAME="${PROGRAM_NAME}.sh"
 SYMLINK_NAME="${PROGRAM_NAME}"
 SCRIPT_NAME="${PROGRAM_NAME}.py"
@@ -651,12 +655,22 @@ else
       exit 1
     fi
   else
-    log "\nBuilding executable file '${COMPILED}' ..."
-    pyinstaller -F "${SCRIPT}"
-    STATUS="${?}"
-    if [[ "${STATUS}" -ne 0 ]]; then
-      logErr "Building executable file threw error ${STATUS}"
-      exit ${STATUS}
+    if [[ -n "${ICON}" && -s "${ICON}" ]]; then
+      log "\nBuilding executable (with icon) for destination '${COMPILED}' ..."
+      pyinstaller -i "${ICON}" -F "${SCRIPT}"
+      STATUS="${?}"
+      if [[ "${STATUS}" -ne 0 ]]; then
+        logErr "Building executable (with icon) threw error ${STATUS}"
+        exit ${STATUS}
+      fi
+    else
+      log "\nBuilding executable for destination '${COMPILED}' ..."
+      pyinstaller -F "${SCRIPT}"
+      STATUS="${?}"
+      if [[ "${STATUS}" -ne 0 ]]; then
+        logErr "Building executable file threw error ${STATUS}"
+        exit ${STATUS}
+      fi
     fi
     if [[ -x "${COMPILED_RESULT}" ]]; then
       log "Executable built successfully, copying to '${COMPILED}'"

@@ -18,6 +18,10 @@ set BASE_DIR=%~dp0
 set CALL_STEM=%~n0
 set MYNAME=%CALL_COMMAND%
 set MYPATH=%BASE_DIR%
+set RESOURCES_DIR_NAME=resources
+set RESOURCES_DIR=%BASE_DIR%%RESOURCES_DIR_NAME%
+set ICON_NAME=%PROGRAM_NAME%.ico
+set ICON=%RESOURCES_DIR%\%ICON_NAME%
 set VENV_NAME=venv
 set VENV_HOME=%BASE_DIR%%VENV_NAME%
 set VENV_SCRIPT=%VENV_HOME%\Scripts\activate.bat
@@ -188,11 +192,20 @@ echo. >> %WRAPPER%
 call:loginfo "Wrapper script created: %WRAPPER%"
 
 echo.
-call:loginfo "Building executable at %COMPILED% ..."
-pyinstaller -F %SCRIPT_NAME%
-if ERRORLEVEL 1 (
-    call:logerr "Building executable threw error %ERRORLEVEL%"
-    exit /b 1
+if exist %ICON% (
+    call:loginfo "Building executable with icon at %COMPILED% ..."
+    pyinstaller -i %ICON% -F %SCRIPT_NAME%
+    if ERRORLEVEL 1 (
+        call:logerr "Building executable with icon threw error %ERRORLEVEL%"
+        exit /b 1
+    )
+) else (
+    call:loginfo "Building executable at %COMPILED% ..."
+    pyinstaller -F %SCRIPT_NAME%
+    if ERRORLEVEL 1 (
+        call:logerr "Building executable threw error %ERRORLEVEL%"
+        exit /b 1
+    )
 )
 if NOT EXIST %COMPILED_RESULT% (
     call:logerr "Building executable apparently succeeded, but could not find result %COMPILED_RESULT%"
