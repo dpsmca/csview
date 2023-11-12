@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 512 512" width="512px" height="512px" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <linearGradient gradientUnits="userSpaceOnUse" x1="234.743" y1="122.7" x2="234.743" y2="387.946" id="gradient-0" gradientTransform="matrix(0.990407, -0.138181, 0.150502, 1.078717, -34.87772, 2.576231)">
+      <stop offset="0" style="stop-color: rgb(23, 16, 218);"/>
+      <stop offset="1" style="stop-color: rgb(0, 1, 80);"/>
+    </linearGradient>
+    <path id="text-path-0" d="M -64.212 181.71 C -64.212 253.019 -56.436 281.886 -56.436 331.205"/>
+    <path id="text-path-1" d="M 588.279 272.496 C 712.907 272.963 751.445 273.858 797.714 275.097 C 858.627 276.728 855.218 401.087 855.218 507.598"/>
+    <linearGradient id="gradient-4" bx:pinned="true">
+      <title>gradient1</title>
+      <stop offset="0" style="stop-color: rgb(84, 0, 203);"/>
+      <stop offset="1" style="stop-color: rgb(49, 0, 122);"/>
+    </linearGradient>
+    <linearGradient id="gradient-3" bx:pinned="true">
+      <title>gradient2</title>
+      <stop offset="0" style="stop-color: rgb(84, 2, 201);"/>
+      <stop offset="1" style="stop-color: rgb(33, 0, 83);"/>
+    </linearGradient>
+  </defs>
+  <g style="" transform="matrix(1.830834, 0, 0, 1.830834, -212.693375, -212.693375)">
+    <title>CSViewIcon</title>
+    <rect x="128.442" y="123.377" width="255.116" height="265.246" style="fill: url('#gradient-0');" rx="20.738" ry="20.738">
+      <title>IconBackground</title>
+    </rect>
+    <g transform="matrix(0.339558, 0, 0, 0.339558, 5.808618, 157.093414)" style="">
+      <title>IconText</title>
+      <g>
+        <title>CSView</title>
+        <text style="fill: rgb(255, 255, 255); font-family: 'Courier Primal'; font-size: 339.732px; font-weight: 700; line-height: 203.839px; stroke: rgb(255, 255, 255); stroke-width: 7.84433px; white-space: pre;" transform="matrix(1.156436, 0, 0, 1.264217, 246.788528, -86.985825)" x="111.7" y="222.374"><title>CSV</title>CSV</text>
+        <text style="fill: rgb(255, 255, 255); font-family: 'Arial Rounded MT Bold'; font-size: 270.537px; line-height: 203.839px; stroke: rgb(255, 255, 255); stroke-width: 6.452px; text-anchor: middle; white-space: pre;" transform="matrix(0.591832, 0, 0, 0.648093, 895.88916, 214.389145)"><title>iew_mono</title><tspan x="111.7" y="222.374">i</tspan><tspan x="111.7" dy="0.7em">​</tspan><tspan>e</tspan><tspan x="111.7" dy="0.7em">​</tspan><tspan>w</tspan></text>
+        <text style="fill: rgb(255, 255, 255); font-family: 'Marker Felt'; font-size: 339.732px; font-weight: 700; line-height: 203.839px; stroke: rgb(255, 255, 255); stroke-width: 6.452px; text-anchor: middle; white-space: pre; visibility: hidden;" transform="matrix(0.493337, 0, 0, 0.540235, 911.773743, 242.580734)"><title>iew_marker</title><tspan x="111.7" y="222.374">i</tspan><tspan x="111.7" dy="0.7em">​</tspan><tspan>e</tspan><tspan x="111.7" dy="0.7em">​</tspan><tspan>w</tspan></text>
+      </g>
+      <g transform="matrix(1, 0, 0, 1, 60.991119, 3.499284)">
+        <title>dots_col_1</title>
+        <ellipse style="stroke-width: 3px; stroke: rgb(255, 255, 255); fill: rgb(255, 255, 255);" cx="437.613" cy="264.124" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; stroke: rgb(255, 255, 255); fill: rgb(255, 255, 255);" cx="437.613" cy="585.168" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; stroke: rgb(255, 255, 255); fill: rgb(255, 255, 255);" cx="437.613" cy="504.907" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; stroke: rgb(255, 255, 255); fill: rgb(255, 255, 255);" cx="437.613" cy="424.646" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; stroke: rgb(255, 255, 255); fill: rgb(255, 255, 255);" cx="437.613" cy="344.385" rx="16.134" ry="16.134"/>
+      </g>
+      <g transform="matrix(1, 0, 0, 1, 301.555695, 3.499284)">
+        <title>dots_col_2</title>
+        <ellipse style="stroke-width: 3px; fill: rgb(255, 255, 255); stroke: rgb(255, 255, 255);" cx="437.613" cy="264.124" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; fill: rgb(255, 255, 255); stroke: rgb(255, 255, 255);" cx="437.613" cy="585.168" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; fill: rgb(255, 255, 255); stroke: rgb(255, 255, 255);" cx="437.613" cy="504.907" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; fill: rgb(255, 255, 255); stroke: rgb(255, 255, 255);" cx="437.613" cy="424.646" rx="16.134" ry="16.134"/>
+        <ellipse style="stroke-width: 3px; fill: rgb(255, 255, 255); stroke: rgb(255, 255, 255);" cx="437.613" cy="344.385" rx="16.134" ry="16.134"/>
+      </g>
+    </g>
+  </g>
+</svg>
