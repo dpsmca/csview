@@ -1,3 +1,5 @@
+# Dependencies for CSView
+# Must all be installed
 argparse
 colorama
 termcolor
