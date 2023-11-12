@@ -92,7 +92,7 @@ if %DEBUGMODE% EQU 1 (
 )
 
 echo.
-if [%CURRENT_DIR%]!=[%BASE_DIR%] (
+if NOT [%CURRENT_DIR%]==[%BASE_DIR%] (
   cd "%BASE_DIR%"
 )
 
