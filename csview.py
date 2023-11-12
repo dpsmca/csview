@@ -28,6 +28,7 @@ DEFAULT_PRINT_OUTPUT = False
 DEFAULT_BOLD = False
 DEFAULT_PLAIN_TEXT = False
 DEFAULT_QUOTE_EMPTY = False
+
 # Define a list of colors to be used for the columns.
 # Available text colors:
 #     black, red, green, yellow, blue, magenta, cyan, white,
@@ -106,7 +107,9 @@ def bad_string(value: Any) -> bool:
 
 
 # Function to wrap the text with the appropriate color
-def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD):
+def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool = False):
+    if plain_text:
+        return text
     if bold:
         return colored(text, color, attrs=['bold'])
     else:
@@ -213,7 +216,7 @@ def guess_delimiter(filename: str) -> str:
 
 # Main function to display the CSV/TSV file
 # def display_file(filename, column_delimiter=',', output_separator="\t"):
-def format_file(filename: str, output_separator: str = "\t", column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD) -> list[str]:
+def format_file(filename: str, output_separator: str = "\t", quote_empty: bool = False, column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
     max_widths = None
     delim = column_delimiter if good_string(column_delimiter) else None
     if delim is None:
@@ -231,7 +234,7 @@ def format_file(filename: str, output_separator: str = "\t", column_delimiter: s
     # print(colorize(comments, color_comment))
     output: list[str] = list()
     for comment_line in comment_lines:
-        output.append(colorize(comment_line.strip(), color_comment))
+        output.append(colorize(comment_line.strip(), color_comment, colors_bold, plain_text))
 
     max_widths = get_max_widths(filename, delim)
     padding_left_str = " " * left_padding
@@ -245,17 +248,16 @@ def format_file(filename: str, output_separator: str = "\t", column_delimiter: s
             row_output: list[str] = list()
             for i, field in enumerate(row):
                 trimmed_field = field.strip()
-                if trimmed_field == "":
+                if trimmed_field == "" and quote_empty:
                     trimmed_field = '""'
                 # Get the appropriate color for the current column
                 color = colors[i % len(colors)]
                 # Print the field colorized and padded to the column width
                 # print(colorize(trimmed_field.ljust(max_widths[i]), color), end=output_separator)
                 if colors_bold:
-                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, True))
+                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, True, plain_text))
                 else:
-                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color))
-            # print()  # Newline after each row
+                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, False, plain_text))
             output.append(output_separator.join(row_output))
 
     else:
@@ -372,8 +374,10 @@ if __name__ == "__main__":
     positional_args.add_argument('arg_input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path", HELP_COLOR))
     # query_args.add_argument('-i', '--input', required=False, type=str, dest="arg_input_file", default=None, help=colored("Input TSV/CSV file", HELP_COLOR))
     input_args.add_argument('-d', '--delimiter', required=False, type=str, dest="arg_delimiter", default=None, help=colored("Delimiter character used by input file if not ',' or tab", HELP_COLOR))
-    output_args.add_argument('-p', '--print', required=False, dest="arg_print_output", action='store_true', help=colored("Print output to terminal instead of displaying in pager", HELP_COLOR))
-    output_args.add_argument('-b', '--bold', required=False, dest="arg_bold_colors", action='store_true', help=colored("Use bold colors for columns (default: false)", HELP_COLOR))
+    output_args.add_argument('-p', '--print', required=False, dest="arg_print_output", action='store_true', default=DEFAULT_PRINT_OUTPUT, help=colored("Print output to terminal instead of displaying in pager", HELP_COLOR))
+    output_args.add_argument('-q', '--quote-empty', required=False, dest="arg_empty_quotes", action='store_true', default=DEFAULT_QUOTE_EMPTY, help=colored(f"Fill empty columns with \"\" (Default: false)", HELP_COLOR))
+    output_args.add_argument('-b', '--bold', required=False, dest="arg_bold_colors", action='store_true', default=DEFAULT_BOLD, help=colored(f"Use bold colors for columns (Default: {DEFAULT_BOLD})", HELP_COLOR))
+    output_args.add_argument('-n', '--no-color', required=False, dest="arg_no_color", action='store_true', default=DEFAULT_PLAIN_TEXT, help=colored(f"Do not colorize output, only align columns (Default: {DEFAULT_PLAIN_TEXT})", HELP_COLOR))
     output_args.add_argument('-s', '--separator', required=False, type=str, dest="arg_separator", default=None, help=colored(description_separator, HELP_COLOR))
     output_args.add_argument('-r', '--right-pad', required=False, type=int, dest="arg_padding_right", default=PADDING_RIGHT, help=colored(f"Number of spaces to add to the right of each column for padding. (Default: {PADDING_RIGHT})", HELP_COLOR))
     output_args.add_argument('-l', '--left-pad', required=False, type=int, dest="arg_padding_left", default=PADDING_LEFT, help=colored(f"Number of spaces to add to the left of each column for padding. (Default: {PADDING_LEFT})", HELP_COLOR))
@@ -396,7 +400,9 @@ if __name__ == "__main__":
     arg_pad_right = inpArgs.arg_padding_right
     arg_pad_left = inpArgs.arg_padding_left
     arg_print = inpArgs.arg_print_output
+    arg_empty_quotes = inpArgs.arg_empty_quotes
     arg_bold = inpArgs.arg_bold_colors
+    arg_no_color = inpArgs.arg_no_color
 
     if bad_string(arg_input):
         arg_input = inpArgs.input_file
@@ -414,6 +420,8 @@ if __name__ == "__main__":
     debug = inpArgs.debug
     print_output = arg_print
     bold_colors = arg_bold
+    no_colors = arg_no_color
+    empty_quotes = arg_empty_quotes
 
     # if debug:
     #     logging.basicConfig(level=logging.DEBUG)
@@ -427,15 +435,15 @@ if __name__ == "__main__":
     colorized_lines: list[str] = None
     colorized_output: str = ""
     if good_string(delimiter):
-        colorized_lines = format_file(input_file, separator, delimiter, lpadding, rpadding, bold_colors)
+        colorized_lines = format_file(input_file, separator, empty_quotes, delimiter, lpadding, rpadding, bold_colors, no_colors)
     else:
-        colorized_lines = format_file(input_file, separator, left_padding=lpadding, right_padding=rpadding, colors_bold=bold_colors)
+        colorized_lines = format_file(input_file, separator, empty_quotes, left_padding=lpadding, right_padding=rpadding, colors_bold=bold_colors, plain_text=no_colors)
     if colorized_lines is not None and len(colorized_lines) > 0:
         if print_output:
-            print(colorized_lines)
+            # Just dump output to terminal instead of showing in pager
+            print("\n".join(colorized_lines))
         else:
-            # term_width = get_term_size("w")
-            # term_height = get_term_size("h")
+            # Show output in pager
             pager = Pager()
             pager.add_source(FormattedTextSource(ANSI(generate_paged_content(colorized_lines))))
             pager.run()
