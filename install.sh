@@ -145,6 +145,37 @@ function titleCase() {
   echo ${*^}
 }
 
+function check_package() {
+  # Check if a single package is installed
+  local PKG
+  local CMD1
+  local CMD2
+  local PKG_STATUS=0
+  PKG="${1}"
+  if [[ -z "${PKG}" ]]; then
+    logErr "check_package: must provide name of a Python package to check"
+    exit 1
+  fi
+  CMD1="python3 -c \"import ${PKG}\" 2>/dev/null"
+  CMD2="python3 -c \"import subprocess ; available = not(subprocess.run(['pip', 'show', '${PKG}'], capture_output=True, check=True))\" 2>/dev/null"
+  logDbg "check_package: checking for package ${PKG} with command: ${CMD1}"
+  python3 -c "import ${PKG}" 2>/dev/null
+  PKG_STATUS="${?}"
+  logDbg "check_package: ${PKG} import returned error code ${PKG_STATUS}"
+  if [[ "${PKG_STATUS}" -ne 0 ]]; then
+    logDbg "check_package: checking if ${PKG} is non-module with command: ${CMD2}"
+    python -c "import subprocess ; available = not(subprocess.run(['pip', 'show', '${PKG}'], capture_output=True, check=True))" 2>/dev/null
+    PKG_STATUS="${?}"
+    logDbg "check_package: ${PKG} pip check returned error code ${PKG_STATUS}"
+    if [[ "${PKG_STATUS}" -ne 0 ]]; then
+      logDbg "check_package: ${PKG} is not installed"
+      return 1
+    fi
+  fi
+  logDbg "check_package: ${PKG} found"
+  return 0
+}
+
 function check_packages() {
   # Check for required Python packages
   local REQUIREMENTS_FILE
@@ -164,21 +195,25 @@ function check_packages() {
   fi
   mapfile -t TMP_PACKAGES < "${REQUIREMENTS_FILE}"
   for line in "${TMP_PACKAGES[@]}"; do
-    if [[ "${line}" =~ ^# ]]; then
+    # Easiest way to trim leading or trailing whitespace is to pipe through xargs
+    TRIMMED="$(${ECHO} "${line}" | ${XARGS})"
+    if [[ "${TRIMMED}" == "" || "${TRIMMED}" =~ ^# ]]; then
+      # Blank line or comment, ignore it
       continue
     else
-      PACKAGES+=( "${line}" )
+      # Not a blank line or a comment, process it
+      PACKAGES+=( "${TRIMMED}" )
     fi
   done
 
   for pkg in "${PACKAGES[@]}"; do
     IDX="$(( IDX + 1))"
-    CMD1="python3 -c \"import ${pkg}\" 2>/dev/null"
-    logDbg "check_packages: checking for package ${IDX} (${pkg}) with command: ${CMD1}"
-    python3 -c "import ${pkg}" 2>/dev/null
+    logDbg "check_packages: checking for package ${IDX} (${pkg}) ..."
+    check_package "${pkg}"
     PKG_STATUS="${?}"
     logDbg "check_packages: package check command for package ${IDX} (${pkg}) returned status ${PKG_STATUS}"
     if [[ "${PKG_STATUS}" -ne 0 ]]; then
+      logWarn "  * Package #${IDX} '${pkg}' not installed"
       return 1
     fi
   done
