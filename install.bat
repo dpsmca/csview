@@ -310,8 +310,10 @@ echo %ESC%[93m%~1%ESC%[0m
 exit /b 0
 
 :logdebug
-call :setESC
-echo %ESC%[95m%~1%ESC%[0m
+if %DEBUGMODE% equ 1 (
+    call :setESC
+    echo %ESC%[95m%~1%ESC%[0m
+)
 exit /b 0
 
 :logerr
