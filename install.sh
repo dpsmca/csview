@@ -560,7 +560,7 @@ if [[ "${DRY_RUN}" -ne 1 ]]; then
     log "Packages are already installed, no need to reinstall"
   fi
 
-  logDbg "Re-checking existene of required Python packages ..."
+  logDbg "Re-checking existence of required Python packages ..."
   check_packages "${DEPS_PATH}"
   STATUS="${?}"
   if [[ "${STATUS}" -ne 0 ]]; then
