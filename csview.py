@@ -3,6 +3,7 @@
 import sys
 import os
 import csv
+import traceback
 # import pandas as pd
 
 try:
@@ -15,8 +16,16 @@ try:
     from pypager.pager import Pager
     from prompt_toolkit import ANSI
 except ImportError as e:
-    print(f"ERROR: required packages are not installed, please run the installer or 'pip install -r requirements.txt'")
-    raise ImportError(e)
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UL = '\033[4m'
+    NOBOLD = '\033[22m'
+    NOUL = '\033[24m'
+    NC = '\033[0m'
+    print(f"{RED}{UL}ERROR:{NOUL} {str(e)}{NC}", file=sys.stderr)
+    print(f"{RED}{UL}STACK TRACE:{NOUL} {traceback.format_exc()}{NC}", file=sys.stderr)
+    print(f"{RED}One or more required Python packages are not installed, run the install script or 'pip install -r requirements.txt'{NC}", file=sys.stderr)
+    sys.exit(1)
 
 PROGRAM_TITLE = "CSView"
 PROGRAM_NAME = PROGRAM_TITLE.lower()
