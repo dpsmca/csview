@@ -2,3 +2,4 @@ argparse
 termcolor
 pypager
 prompt_toolkit
+pyinstaller
