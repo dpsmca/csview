@@ -103,7 +103,7 @@ call:loginfo "Checking existence of Python script ..."
 IF NOT EXIST "%SCRIPT%" (
     call:logerr "ERROR^: could not find Python script: %SCRIPT%"
     echo.
-    GOTO :PROBLEM
+    exit /b 1
 ) else (
     call:loginfo "Python script exists: %SCRIPT%"
 )
@@ -117,7 +117,7 @@ IF NOT EXIST "%VENV_SCRIPT%" (
     IF NOT EXIST "%VENV_SCRIPT%" (
         call:logerr "ERROR: Could not set up Python virtual environment"
         echo.
-        GOTO :PROBLEM
+        exit /b 1
     ) else (
         call:loginfo "Python virtual environment successfully created"
         echo.
@@ -130,7 +130,7 @@ IF NOT EXIST "%VENV_SCRIPT%" (
 IF NOT EXIST "%VENV_SCRIPT%" (
     call:logerr "ERROR: could not find or create Python virtual environment in %VENV_HOME%"
     echo.
-    GOTO :PROBLEM
+    exit /b 1
 )
 
 call:loginfo "Python virtual environment is good, continuing ..."
@@ -154,7 +154,7 @@ if ERRORLEVEL 1 (
         echo.
         call:logerr "ERROR: Could not install required Python packages"
         echo.
-        goto :PROBLEM
+        exit /b 1
     ) else (
         echo.
         call:loginfo "Successfully installed required Python packages"
@@ -190,16 +190,16 @@ call:loginfo "Building executable at %COMPILED% ..."
 pyinstaller -F %SCRIPT_NAME%
 if ERRORLEVEL 1 (
     call:logerr "Building executable threw error %ERRORLEVEL%"
-    goto :PROBLEM
+    exit /b 1
 )
 if NOT EXIST %COMPILED_RESULT% (
     call:logerr "Building executable apparently succeeded, but could not find result %COMPILED_RESULT%"
-    goto :PROBLEM
+    exit /b 1
 )
 copy /y %COMPILED_RESULT% %COMPILED%
 if NOT EXIST %COMPILED% (
     call:logerr "Could not copy executable to %COMPILED%"
-    goto :PROBLEM
+    exit /b 1
 )
 call:loginfo "Executable created: %COMPILED%"
 
