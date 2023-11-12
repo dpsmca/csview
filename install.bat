@@ -143,13 +143,15 @@ echo.
 
 call:loginfo "Checking existence of required Python packages ..."
 
-python -c "import termcolor" 2>NUL
+:: python -c "import termcolor" 2>NUL
+call:check_packages %DEPS_PATH%
 if ERRORLEVEL 1 (
-    call:logwarn "Packages not installed, installing required packages ..."
+    call:logwarn "Required packages are missing, installing required packages ..."
     echo.
     python -m pip install --upgrade pip
     pip install -r requirements.txt
-    python -c "import termcolor"
+    :: python -c "import termcolor"
+    call:check_packages %DEPS_PATH%
     if ERRORLEVEL 1 (
         echo.
         call:logerr "ERROR: Could not install required Python packages"
@@ -214,6 +216,30 @@ GOTO :END
 for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
   set ESC=%%b
   exit /B 0
+)
+exit /b 0
+
+
+:check_packages
+:: -- Checks for required Python packages by trying to import each one
+:: -- %~1: full path to requirements.txt file
+set PACKAGES=%~1
+if [%PACKAGES%]==[""] (
+    call:logerr "check_packages: must provide path to a file containing list of packages"
+    exit /b 1
+)
+if not exist %PACKAGES% (
+    call:logerr "check_packages: could not find packages file %PACKAGES%"
+    exit /b 1
+)
+for /f %%i in (%PACKAGES%) do (
+    python -c "import %%i" 2>NUL
+    IF ERRORLEVEL 1 (
+        call:logdebug "check_packages: package %%i not installed"
+        exit /b 1
+    ) else (
+        call:logdebug "check_packages: package %%i installed"
+    )
 )
 exit /b 0
 
