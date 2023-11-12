@@ -419,6 +419,7 @@ if __name__ == "__main__":
     #     logging.basicConfig(level=logging.WARNING)
 
     if not ntpath.exists(input_file):
+        logerr("Could not find input file or text from stdin")
         sys.exit(1)
 
     colorized_lines: list[str] = None
