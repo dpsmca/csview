@@ -1,19 +1,29 @@
 @echo off
 
-REM Creates Python virtual environment and installs required packages for csview.
-REM Requires Python 3 with `python` and `pip` to be available in the path.
-REM Also set PYTHON_HOME to the appropriate Python base directory.
+:: Creates Python virtual environment and installs required packages.
+:: Requires Python 3 with `python` and `pip` to be available in the path.
+:: Will also build a standalone executable file.
+:: Also set PYTHON_HOME to the appropriate Python base directory.
 
 setlocal EnableDelayedExpansion
 call :setESC
 
+:::::::::::::::::::::::::::::::::::::
+:: Defaults
+:::::::::::::::::::::::::::::::::::::
+set REINSTALL=0
+set DEBUGMODE=0
+
+:::::::::::::::::::::::::::::::::::::
+:: Installation variables
+:::::::::::::::::::::::::::::::::::::
 set PROGRAM_NAME=csview
 set WRAPPER_NAME=%PROGRAM_NAME%.bat
 set COMPILED_NAME=%PROGRAM_NAME%.exe
 set SCRIPT_NAME=%PROGRAM_NAME%.py
 set CURRENT_DIR=%CD%
 set CALL_COMMAND=%~f0
-@REM BASE_DIR will end in a backslash, so don't use separators after it
+:: BASE_DIR will end in a backslash, so don't use separators after it
 set BASE_DIR=%~dp0
 set CALL_STEM=%~n0
 set MYNAME=%CALL_COMMAND%
@@ -28,6 +38,8 @@ set VENV_SCRIPT=%VENV_HOME%\Scripts\activate.bat
 set VENV_DEACTIVATE=%VENV_HOME%\Scripts\deactivate.bat
 set DEPS_FILE=requirements.txt
 set DEPS_PATH=%BASE_DIR%%DEPS_FILE%
+set TEMP_COMPILE_DIR_NAME=build
+set TEMP_COMPILE_DIR=%BASE_DIR%%TEMP_COMPILE_DIR_NAME%
 set COMPILED_DIR_NAME=dist
 set COMPILED_DIR=%BASE_DIR%%COMPILED_DIR_NAME%
 set COMPILED_RESULT=%COMPILED_DIR%\%COMPILED_NAME%
@@ -36,37 +48,78 @@ set WRAPPER=%BASE_DIR%%WRAPPER_NAME%
 set SCRIPT=%BASE_DIR%%SCRIPT_NAME%
 set COMPILED=%BASE_DIR%%COMPILED_NAME%
 
-set DEBUGMODE=0
-
 (SET LF=^
 %=this line is empty=%
 )
 
-set ARG1=
-for /f "usebackq delims==" %%i in (`python -c "import sys ; lcase = sys.argv[1].lower() if len(sys.argv) > 1 else '' ; print(lcase)" %1`) DO (
-    set ARG1=%%i
+:::::::::::::::::::::::::::::::::::::
+:: Parse arguments
+:::::::::::::::::::::::::::::::::::::
+:: Each of these variables contains all the different ways the option can be specified at the command line.
+:: These are all in lowercase, but the parser comparison is case insensitive.
+set "REINSTALL_ARGS=;-r;--reinstall;-reinstall;/r;/reinstall;"
+set "DEBUG_ARGS=;-d;--debug;-debug;/d;/debug;"
+
+set LOCALMATCH=0
+
+:: Just an index for debugging output
+set i=0
+
+:: The actual parsing loop
+:loop
+
+:: Index for debugging
+SET /A i=i+1
+
+IF NOT "%~1"=="" (
+    REM Just some debugging output
+    REM echo ARG !i!: %~1
+
+    REM This variable keeps track of whether this iteration of the loop has found a match, so we can get positional arguments at the end
+    REM set LOCALMATCH=0
+
+    REM This syntax is complex and tricky, but allows you to use a single IF statement to do case-insensitive comparison of the current
+    REM option with a whole list of possible ways the user might specify the option. If you don't want this level of flexibility, you
+    REM could always do a simpler comparison of the type:
+    REM IF "%~1"=="-r" ( ... )
+    REM Note that doing it this way will NOT be case-insensitive, and will force the user to specify the option as `-r` instead of also
+    REM allowing `--reinstall` or `/r` or the like.
+    if "!REINSTALL_ARGS:;%~1%;=!" neq "!REINSTALL_ARGS!" (
+        REM This is the REINSTALL flag
+        set REINSTALL=1
+        REM set LOCALMATCH=1
+
+        REM More debugging output
+        @REM echo Reinstall mode enabled
+
+        REM Uncomment if this argument requires a parameter
+        REM set PARAMETER=%2
+        REM SHIFT
+    )
+    if "!DEBUG_ARGS:;%~1%;=!" neq "!DEBUG_ARGS!" (
+        REM This is the DEBUG flag
+        set DEBUGMODE=1
+        REM set LOCALMATCH=1
+
+        REM More debugging output
+        REM echo Debugging mode enabled
+    )
+
+    REM IF NOT "!LOCALMATCH!"=="1" (
+    REM     REM Argument was not one of the known options, so it must be a positional argument.
+    REM
+    REM     REM More debugging output
+    REM     echo Found positional argument %1
+    REM     set TARGET1=%1
+    REM )
+    SHIFT
+    GOTO :loop
 )
 
-set DEBUGMODE=0
-if [%ARG1%]==[-d] (
-    set DEBUGMODE=1
-)
-
-if [%ARG1%]==[/d] (
-    set DEBUGMODE=1
-)
-
-if [%ARG1%]==[-debug] (
-    set DEBUGMODE=1
-)
-
-if [%ARG1%]==[--debug] (
-    set DEBUGMODE=1
-)
-
-if [%ARG1%]==[/debug] (
-    set DEBUGMODE=1
-)
+:: set ARG1=
+:: for /f "usebackq delims==" %%i in (`python -c "import sys ; lcase = sys.argv[1].lower() if len(sys.argv) > 1 else '' ; print(lcase)" %1`) DO (
+::     set ARG1=%%i
+:: )
 
 if %DEBUGMODE% EQU 1 (
     echo.
@@ -110,6 +163,10 @@ IF NOT EXIST "%SCRIPT%" (
     exit /b 1
 ) else (
     call:loginfo "Python script exists: %SCRIPT%"
+)
+
+if "%REINSTALL%"=="1" (
+    call:reinstall
 )
 
 echo.
@@ -239,6 +296,109 @@ set Params=%*
 for /f "tokens=1*" %%a in ("!Params!") do EndLocal & set %1=%%b
 exit /b 0
 
+
+:lowercase
+:: Converts a string to lowercase. Relies on Python.
+:: %~1: name of return variable
+:: %~2: string to be lowercased
+:: ERRORLEVEL: 0 if no errors during conversion, 1 otherwise
+SetLocal EnableDelayedExpansion
+set RES=%~1
+set VAL=%~2
+for /f "usebackq delims==" %%i in (`python -c "import sys ; lcase = sys.argv[1].lower() if len(sys.argv) > 1 else '' ; print(lcase)" %VAL%`) DO (
+    endlocal
+    set %RES%=%%i
+)
+exit /b 0
+
+
+:reinstall
+:: Removes existing virtual environment, wrapper file, compiled executable, and build directory.
+:: ERRORLEVEL: 0 if no errors during removal, 1 otherwise
+set REINSTALL_STATUS=0
+call:log "REINSTALL: Checking for existing files in '%BASE_DIR%' ..."
+call:logdebug "REINSTALL: Checking existence of compiled executable: '%COMPILED%'"
+IF EXIST %COMPILED% (
+    call:logdebug "REINSTALL: Removing compiled executable '%COMPILED%' ..."
+    del /q /f %COMPILED%
+    call:logdebug "REINSTALL: Compiled executable removed: '%COMPILED%' ..."
+) else (
+    call:logdebug "REINSTALL: compiled executable does not exist, no need to remove it"
+)
+
+call:logdebug "REINSTALL: Checking existence of executable build directory 1: '%TEMP_COMPILE_DIR%'"
+IF EXIST %TEMP_COMPILE_DIR% (
+    call:logdebug "REINSTALL: Removing executable build directory 1: '%TEMP_COMPILE_DIR%' ..."
+    rd /s/q %TEMP_COMPILE_DIR%
+    call:logdebug "REINSTALL: Executable build directory 1 removed: '%TEMP_COMPILE_DIR%' ..."
+) else (
+    call:logdebug "REINSTALL: Executable build directory 1 does not exist, no need to remove it"
+)
+
+call:logdebug "REINSTALL: Checking existence of executable build directory 2: '%COMPILED_DIR%'"
+IF EXIST %COMPILED_DIR% (
+    call:logdebug "REINSTALL: Removing executable build directory 2: '%COMPILED_DIR%' ..."
+    rd /s/q %COMPILED_DIR%
+    call:logdebug "REINSTALL: Executable build directory 2 removed: '%COMPILED_DIR%' ..."
+) else (
+    call:logdebug "REINSTALL: Executable build directory 2 does not exist, no need to remove it"
+)
+
+call:logdebug "REINSTALL: Checking existence of wrapper script: '%WRAPPER%'"
+IF EXIST %WRAPPER% (
+    call:logdebug "REINSTALL: Removing wrapper script '%WRAPPER%' ..."
+    del /q /f %WRAPPER%
+    call:logdebug "REINSTALL: Wrapper script removed: '%COMPILED%' ..."
+) else (
+    call:logdebug "REINSTALL: Wrapper script does not exist, no need to remove it"
+)
+
+call:logdebug "REINSTALL: Checking existence of Python virtual environment: '%VENV_HOME%'"
+IF EXIST %VENV_HOME% (
+    call:logdebug "REINSTALL: Removing Python virtual environment '%VENV_HOME%' ..."
+    del /q /f %VENV_HOME%
+    call:logdebug "REINSTALL: Python virtual environment removed: '%VENV_HOME%' ..."
+) else (
+    call:logdebug "REINSTALL: Python virtual environment does not exist, no need to remove it"
+)
+
+call:logdebug "REINSTALL: Checking for existence of any previous install files ..."
+set REINSTALL_FILES_EXIST=0
+set FAILMSG=
+set ALERT=
+IF EXIST %COMPILED% (
+    set REINSTALL_FILES_EXIST=1
+    set "FAILMSG=compiled executable"
+    if defined ALERT (set ALERT=%ALERT%, %FAILMSG%) else (set ALERT=%FAILMSG%)
+)
+IF EXIST %TEMP_COMPILE_DIR% (
+    set REINSTALL_FILES_EXIST=1
+    set "FAILMSG=temp build directory"
+    if defined ALERT (set ALERT=%ALERT%, %FAILMSG%) else (set ALERT=%FAILMSG%)
+)
+IF EXIST %COMPILED_DIR% (
+    set REINSTALL_FILES_EXIST=1
+    set "FAILMSG=build results directory"
+    if defined ALERT (set ALERT=%ALERT%, %FAILMSG%) else (set ALERT=%FAILMSG%)
+)
+IF EXIST %WRAPPER% (
+    set REINSTALL_FILES_EXIST=1
+    set "FAILMSG=wrapper script"
+    if defined ALERT (set ALERT=%ALERT%, %FAILMSG%) else (set ALERT=%FAILMSG%)
+)
+IF EXIST %VENV_HOME% (
+    set REINSTALL_FILES_EXIST=1
+    set "FAILMSG=Python virtual environment"
+    if defined ALERT (set ALERT=%ALERT%, %FAILMSG%) else (set ALERT=%FAILMSG%)
+)
+set DEBUG_MSG=Unknown
+if defined ALERT (set DEBUG_MSG=%ALERT%)
+IF "%REINSTALL_FILES_EXIST%"=="1" (
+    call:logerror "REINSTALL: Could not remove all previous install files"
+    call:logdebug "REINSTALL: failed to remove: %ALERT%"
+    exit /b 1
+)
+exit /b 0
 
 :check_package
 :: Checks to see if a single Python package is installed
