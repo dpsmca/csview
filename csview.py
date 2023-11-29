@@ -38,6 +38,9 @@ DEFAULT_PRINT_OUTPUT = False
 DEFAULT_BOLD = False
 DEFAULT_PLAIN_TEXT = False
 DEFAULT_QUOTE_EMPTY = False
+DEFAULT_HIDE_TITLE = False
+COLOR_TITLE_TEXT = "black"
+COLOR_TITLE_BG = "on_light_grey"
 
 # Define a list of colors to be used for the columns.
 # Available text colors:
@@ -128,7 +131,7 @@ def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool 
 
 
 def get_term_size(size_type: str = "all") -> int:
-    size = os.get_terminal_size()
+    size: {"columns": int, "lines": int} = os.get_terminal_size()
     if good_string(size_type):
         stype = size_type.lower()
         if stype == "all":
@@ -385,6 +388,7 @@ if __name__ == "__main__":
     positional_args.add_argument('arg_input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path", HELP_COLOR))
     # query_args.add_argument('-i', '--input', required=False, type=str, dest="arg_input_file", default=None, help=colored("Input TSV/CSV file", HELP_COLOR))
     input_args.add_argument('-d', '--delimiter', required=False, type=str, dest="arg_delimiter", default=None, help=colored("Delimiter character used by input file if not ',' or tab", HELP_COLOR))
+    output_args.add_argument('-t', '--title-hide', required=False, dest="arg_title_hide", action='store_true', default=DEFAULT_HIDE_TITLE, help=colored("Hide the title bar (don't show file name at top)", HELP_COLOR))
     output_args.add_argument('-p', '--print', required=False, dest="arg_print_output", action='store_true', default=DEFAULT_PRINT_OUTPUT, help=colored("Print output to terminal instead of displaying in pager", HELP_COLOR))
     output_args.add_argument('-q', '--quote-empty', required=False, dest="arg_empty_quotes", action='store_true', default=DEFAULT_QUOTE_EMPTY, help=colored(f"Fill empty columns with \"\" (Default: false)", HELP_COLOR))
     output_args.add_argument('-b', '--bold', required=False, dest="arg_bold_colors", action='store_true', default=DEFAULT_BOLD, help=colored(f"Use bold colors for columns (Default: {DEFAULT_BOLD})", HELP_COLOR))
@@ -410,6 +414,7 @@ if __name__ == "__main__":
     arg_sep = inpArgs.arg_separator
     arg_pad_right = inpArgs.arg_padding_right
     arg_pad_left = inpArgs.arg_padding_left
+    arg_title_hide = inpArgs.arg_title_hide
     arg_print = inpArgs.arg_print_output
     arg_empty_quotes = inpArgs.arg_empty_quotes
     arg_bold = inpArgs.arg_bold_colors
@@ -429,6 +434,7 @@ if __name__ == "__main__":
     rpadding = arg_pad_right if type(arg_pad_right) == int else PADDING_RIGHT
     lpadding = arg_pad_left if type(arg_pad_left) == int else PADDING_LEFT
     debug = inpArgs.debug
+    hide_title = arg_title_hide
     print_output = arg_print
     bold_colors = arg_bold
     no_colors = arg_no_color
@@ -443,6 +449,11 @@ if __name__ == "__main__":
         logerr("Could not find input file or text from stdin")
         sys.exit(1)
 
+    file_name = f"(STDIN)"
+    pager_title_text = file_name
+    if input_file != DEFAULT_INPUT:
+        file_name = os.path.basename(input_file)
+        pager_title_text = f"FILE: {file_name}"
     colorized_lines: list[str] = None
     colorized_output: str = ""
     if good_string(delimiter):
@@ -456,5 +467,17 @@ if __name__ == "__main__":
         else:
             # Show output in pager
             pager = Pager()
+            pager.application.mouse_support = False
+            if hide_title:
+                pager.display_titlebar = False
+            else:
+                term_width: int = get_term_size("width")
+                title_blank_space = term_width - len(pager_title_text)
+                if title_blank_space > 0:
+                    pager_title_text += " " * title_blank_space
+                # pager_title = ANSI(colored(pager_title_text, "black", "on_light_grey", attrs=["bold"]))
+                pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, COLOR_TITLE_BG))
+                pager.titlebar_tokens = pager_title
+                pager.display_titlebar = True
             pager.add_source(FormattedTextSource(ANSI(generate_paged_content(colorized_lines))))
             pager.run()
