@@ -913,7 +913,7 @@ if __name__ == "__main__":
     else:
         if not ntpath.exists(input_file):
             logerr(f"Could not read input file '{input_file}'")
-            sys.exit(1)
+            exit_error(1)
         else:
             csv_content = get_file_contents(input_file)
             file_name = os.path.basename(input_file)
