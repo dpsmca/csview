@@ -6,6 +6,15 @@ import csv
 import traceback
 # import pandas as pd
 
+RED = '\033[91m'
+BOLD = '\033[1m'
+ITALIC = '\033[3m'
+UL = '\033[4m'
+NOBOLD = '\033[22m'
+NOITALIC = '\033[23m'
+NOUL = '\033[24m'
+NC = '\033[0m'
+
 try:
     import argparse
     import ntpath
@@ -16,12 +25,6 @@ try:
     from pypager.pager import Pager
     from prompt_toolkit import ANSI
 except ImportError as e:
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UL = '\033[4m'
-    NOBOLD = '\033[22m'
-    NOUL = '\033[24m'
-    NC = '\033[0m'
     print(f"{RED}{UL}ERROR:{NOUL} {str(e)}{NC}", file=sys.stderr)
     print(f"{RED}{UL}STACK TRACE:{NOUL} {traceback.format_exc()}{NC}", file=sys.stderr)
     print(f"{RED}One or more required Python packages are not installed, run the install script or 'pip install -r requirements.txt'{NC}", file=sys.stderr)
