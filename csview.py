@@ -136,7 +136,20 @@ def bad_string(value: Any) -> bool:
     return not good_string(value)
 
 
-# Function to wrap the text with the appropriate color
+def is_list(value: Any) -> bool:
+    value_type = type(value)
+    return value_type == list
+
+
+def good_list(value: Any) -> bool:
+    return is_list(value) and len(value) > 0
+
+
+def bad_list(value: Any) -> bool:
+    return not good_list(value)
+
+
+# Wrap text with the specified color
 def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool = False):
     if plain_text:
         return text
