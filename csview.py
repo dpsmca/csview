@@ -175,33 +175,77 @@ def get_term_size(size_type: str = "all") -> int:
             raise TypeError(alert)
 
 
-def get_comments(filename: str) -> str:
-    header_rows: list[str] = list()
-    with open(filename, 'r', newline='') as csvfile:
-        file_lines = list(csvfile.readlines())
-        header_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() == '' or line[0] == '#', file_lines))))
-    output = "\n".join(header_rows)
+def get_file_contents(filename: str) -> str:
+    file_contents: str = ""
+    if bad_string(filename):
+        alert = "get_file_contents: please provide a filename to read"
+        logerr(alert)
+        raise TypeError(alert)
+
+    if ntpath.exists(filename):
+        with open(filename, 'r', newline='') as csvfile:
+            file_contents = csvfile.read()
+    else:
+        alert = f"get_file_contents: could not find file '{filename}'"
+        logerr(alert)
+        raise TypeError(alert)
+
+    return file_contents
+
+
+def get_comments(file_contents: str) -> str:
+    comment_rows: list[str] = list()
+    if bad_string(file_contents):
+        alert = "get_comments: invalid file contents provided"
+        logerr(alert)
+        raise TypeError(alert)
+
+    file_lines = list(file_contents.strip().split("\n"))
+    # with open(filename, 'r', newline='') as csvfile:
+    #     file_lines = list(csvfile.readlines())
+    comment_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line == '' or line[0] == '#', file_lines))))
+    output = "\n".join(comment_rows)
     return output
 
 
-def get_data_lines(filename: str) -> str:
+def get_data_lines(file_contents: str) -> str:
     data_rows: list[str] = list()
-    with open(filename, 'r', newline='') as csvfile:
-        file_lines = list(csvfile.readlines())
-        data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
+    if bad_string(file_contents):
+        alert = "get_data_lines: invalid file contents provided"
+        logerr(alert)
+        raise TypeError(alert)
+    # with open(filename, 'r', newline='') as csvfile:
+    #     file_lines = list(csvfile.readlines())
+    #     data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
+    file_lines = list(file_contents.strip().split("\n"))
+    data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
     output = "\n".join(data_rows)
     return output
 
 
-# Function to calculate the maximum width of each column
-def get_max_widths(filename: str, column_delimiter: str) -> list[int]:
+def get_max_column_widths(lines: list[str], column_delimiter: str) -> list[int]:
+    """
+    For a list of lines, find the maximum width of each column in the line,
+    and return these maximum widths as a list.
+
+    Parameters
+    ----------
+    lines : list[str]
+        List of strings where each element is a line to be considered.
+    column_delimiter : str
+        String representing the delimiter used to separate individual columns in the lines.
+
+    Returns
+    -------
+    list[int]
+        Returns a list of integers where each element is the maximum width of the corresponding column.
+
+    """
     widths: list[int] = list()
-    data = get_data_lines(filename)
-    data_lines = data.strip().split("\n")
-    data = data.strip()
-    logdbg(f"DATA LINES:\n{data_lines}")
-    reader = csv.reader(data_lines, delimiter=column_delimiter)
-    for rownum, row in enumerate(reader):
+    rows: list[list[str]] = list(map(lambda line: line.strip().split(column_delimiter), lines))
+    logdbg(f"get_max_column_widths: rows:\n{rows}")
+    # reader = csv.reader(data_lines, delimiter=column_delimiter)
+    for rownum, row in enumerate(rows):
         logdbg(f"ROW {rownum}: '{row}'")
         for i, field in enumerate(row):
             trimmed_field = field.strip()
@@ -214,60 +258,162 @@ def get_max_widths(filename: str, column_delimiter: str) -> list[int]:
                 widths.append(chars)
             else:
                 widths[i] = max(widths[i], chars)
-    # with open(filename, newline='') as csvfile:
-    #     reader = csv.reader(csvfile, delimiter=column_delimiter)
-    #     for row in reader:
-    #         for i, field in enumerate(row):
-    #             if len(widths) <= i:
-    #                 widths.append(len(field))
-    #             else:
-    #                 widths[i] = max(widths[i], len(field))
     logdbg(f"MAX_WIDTHS: {widths}")
     return widths
 
 
-def guess_delimiter(filename: str) -> str:
-    if bad_string(filename):
+# Function to calculate the maximum width of each column
+def get_max_widths(file_contents: str, column_delimiter: str) -> list[int]:
+    """
+    Given a filename and a column delimiter, find the maximum width of each column in the file
+    and return these maximum widths as a list.
+
+    Parameters
+    ----------
+    file_contents : str
+        Complete contents of CSV/TSV file to be analyzed.
+    column_delimiter : str
+        String representing the delimiter used to separate individual columns in the file.
+
+    Returns
+    -------
+    list[int]
+        Returns a list of integers where each element is the maximum width of the corresponding column.
+
+    """
+    comments = get_comments(file_contents)
+    data = get_data_lines(file_contents)
+    comments = comments.strip()
+    data = data.strip()
+    comment_lines = comments.split("\n")
+    data_lines = data.split("\n")
+    lines_to_consider: list[str] = list()
+
+    # Parse the non-comment lines and get the maximum number of columns
+    num_data_cols = 0
+    # reader = csv.reader(data_lines, delimiter=column_delimiter)
+    for i, dline in enumerate(data_lines):
+        row = dline.strip().split(column_delimiter)
+        cols_in_row = len(row)
+        if cols_in_row > 0:
+            lines_to_consider.append(dline)
+        if cols_in_row > num_data_cols:
+            num_data_cols = cols_in_row
+
+    logdbg(f"get_max_widths: {num_data_cols} columns in data")
+
+    # Parse the comment lines and see if any of them match the number of data columns.
+    # If any of them do, add them to the list of lines to consider when calculating the
+    # column widths.
+    num_comment_cols = 0
+    # Strip away comment character and whitespace around it
+    stripped_comment_lines = list(map(lambda x: x.strip().strip("#").strip(), comment_lines))
+    for i, cline in enumerate(stripped_comment_lines):
+        split_comment = cline.strip().split(column_delimiter)
+        comment_cols = len(split_comment)
+        # logdbg(f"get_max_widths: comment {i} appears to consist of {comment_cols} columns")
+        if comment_cols == num_data_cols:
+            # This column is probably a header, add it to the rows used to calculate max column widths
+            logdbg(f"get_max_widths: COL COUNT MATCH for #{i}: {comment_cols} == {num_data_cols}:\n{cline}")
+            num_comment_cols = comment_cols
+            lines_to_consider.insert(0, cline)
+        else:
+            logdbg(f"get_max_widths: comment #{i} appears to consist of {comment_cols} columns")
+
+    logdbg(f"get_max_widths: considering lines:\n{lines_to_consider}")
+    max_widths = get_max_column_widths(lines_to_consider, column_delimiter)
+    return max_widths
+
+
+def guess_delimiter(file_contents: str) -> str:
+    """
+    Given a string containnig the contents of a CSV/TSV file, analyze the file
+    to try to guess the delimiter used to separate columns in the data. Uses the
+    Python csv module's Sniffer to do the guessing.
+
+    Parameters
+    ----------
+    file_contents : str
+        Complete contents of CSV/TSV file to be analyzed.
+
+    Returns
+    -------
+    str
+        Returns a string representing the best guess about the column delimiter used by the file.
+
+    """
+    if bad_string(file_contents):
         alert = "guess_delimiter: please provide a filename"
         logerr(alert)
         raise TypeError(alert)
-    if not ntpath.exists(filename):
-        alert = f"guess_delimiter: could not find file \"{filename}\""
+    # if not ntpath.exists(filename):
+    #     alert = f"guess_delimiter: could not find file \"{filename}\""
+    #     logerr(alert)
+    #     raise TypeError(alert)
+
+    output_delimiter: str = None
+    file_lines = list(file_contents.strip().split("\n"))
+    # with open(filename, 'r', newline='') as csvfile:
+    #     csvfile.seek(0)
+    #     file_lines = list(csvfile.readlines())
+    good_lines = filter(lambda line: line != '' and line[0] != '#', file_lines)
+    input_contents = "\n".join(good_lines)
+    dialect = csv.Sniffer().sniff(input_contents)
+    if dialect is None:
+        alert = "guess_delimiter: could not determine file delimiter character"
         logerr(alert)
         raise TypeError(alert)
-
-    file_contents: str = ""
-    output_delimiter: str = None
-    with open(filename, 'r', newline='') as csvfile:
-        csvfile.seek(0)
-        file_lines = list(csvfile.readlines())
-        good_lines = filter(lambda line: line != '' and line[0] != '#', file_lines)
-        input_contents = "\n".join(good_lines)
-        dialect = csv.Sniffer().sniff(input_contents)
-        if dialect is None:
-            alert = "guess_delimiter: could not determine file delimiter character"
-            logerr(alert)
-            raise TypeError(alert)
-        output_delimiter = dialect.delimiter
+    output_delimiter = dialect.delimiter
     if output_delimiter is not None:
         return output_delimiter
     else:
-        alert = f"guess_delimiter(): Could not determine file delimiter"
+        alert = f"guess_delimiter: Could not determine file delimiter"
         logerr(alert)
         raise TypeError(alert)
 
 
 # Main function to display the CSV/TSV file
 # def display_file(filename, column_delimiter=',', output_separator="\t"):
-def format_file(filename: str, output_separator: str = "\t", quote_empty: bool = False, column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
-    max_widths = None
+def format_file(file_contents: str, output_separator: str = "\t", quote_empty: bool = False, column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
+    """
+    Given contents of a CSV/TSV file, analyze the file and format the output:
+    - Columns will be aligned and padded
+    - Column values will be colored individually for visual distinctiveness
+    Specifics will be controlled by the function parameters.
+
+    Parameters
+    ----------
+    file_contents : str
+        Complete contents of a CSV/TSV file.
+    output_separator : str
+        String to use to separate columns in the output. Defaults to tab character.
+    quote_empty : bool
+        If false, empty columns will be shown as empty strings (no output). If true, represent them as pairs of double quotes.
+    column_delimiter: str
+        The string that separates columns in the input CSV/TSV file. If not specified, the delimiter will be guessed, if possible.
+    left_padding: int
+        Number of spaces to use to left-pad each column in the output.
+    right_padding: int
+        Number of spaces to use to right-pad each column in the output.
+    colors_bold: bool
+        If true, use bold colors. If false, use regular colors.
+    plain_text: bool
+        If true, don't colorize the output. If false, use the standard colors.
+
+    Returns
+    -------
+    list[str]
+        A list of strings where each element is the colorized and formatted version of one line in the input file.
+
+    """
+    max_widths: list[int] = None
     delim = column_delimiter if good_string(column_delimiter) else None
     if delim is None:
-        delim = guess_delimiter(filename)
+        delim = guess_delimiter(file_contents)
     logdbg(f"BOLD COLORS: {colors_bold}")
     logdbg(f"DETECTED DELIMITER: '{delim}'")
-    comments = get_comments(filename)
-    data = get_data_lines(filename)
+    comments = get_comments(file_contents)
+    data = get_data_lines(file_contents)
     comments = comments.strip()
     data = data.strip()
     comment_lines = comments.split("\n")
@@ -279,9 +425,7 @@ def format_file(filename: str, output_separator: str = "\t", quote_empty: bool =
     for comment_line in comment_lines:
         output.append(colorize(comment_line.strip(), color_comment, colors_bold, plain_text))
 
-    max_widths = get_max_widths(filename, delim)
-    padding_left_str = " " * left_padding
-    padding_right_str = " " * right_padding
+    max_widths = get_max_widths(file_contents, delim)
 
     reader = csv.reader(data_rows, delimiter=delim)
 
@@ -431,8 +575,13 @@ if __name__ == "__main__":
     inpArgs = parser.parse_args()
     show_help = inpArgs.show_help
     if len(sys.argv) < 2:
-        show_usage(parser)
-        exit_error(1)
+        if not sys.stdin.isatty():
+            # Input available on stdin, use that instead of filename
+            reading_from_stdin = True
+        else:
+            # No input available on stdin, show usage and exit
+            show_usage(parser)
+            exit_error(1)
     if show_help:
         show_usage(parser)
         exit_error(0)
@@ -473,21 +622,27 @@ if __name__ == "__main__":
     # else:
     #     logging.basicConfig(level=logging.WARNING)
 
-    if not ntpath.exists(input_file):
-        logerr("Could not find input file or text from stdin")
-        sys.exit(1)
-
-    file_name = f"(STDIN)"
+    csv_content = ""
+    file_name = "(STDIN)"
     pager_title_text = file_name
-    if input_file != DEFAULT_INPUT:
-        file_name = os.path.basename(input_file)
-        pager_title_text = f"FILE: {file_name}"
+    if reading_from_stdin:
+        csv_content = sys.stdin.read()
+    else:
+        if not ntpath.exists(input_file):
+            logerr(f"Could not read input file '{input_file}'")
+            sys.exit(1)
+        else:
+            csv_content = get_file_contents(input_file)
+            file_name = os.path.basename(input_file)
+            pager_title_text = f"FILE: {file_name}"
+
     colorized_lines: list[str] = None
     colorized_output: str = ""
+
     if good_string(delimiter):
-        colorized_lines = format_file(input_file, separator, empty_quotes, delimiter, lpadding, rpadding, bold_colors, no_colors)
+        colorized_lines = format_file(csv_content, separator, empty_quotes, delimiter, lpadding, rpadding, bold_colors, no_colors)
     else:
-        colorized_lines = format_file(input_file, separator, empty_quotes, left_padding=lpadding, right_padding=rpadding, colors_bold=bold_colors, plain_text=no_colors)
+        colorized_lines = format_file(csv_content, separator, empty_quotes, left_padding=lpadding, right_padding=rpadding, colors_bold=bold_colors, plain_text=no_colors)
     if colorized_lines is not None and len(colorized_lines) > 0:
         if print_output:
             # Just dump output to terminal instead of showing in pager
