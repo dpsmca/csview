@@ -93,21 +93,21 @@ def logdbg(*args, **kwargs):
     label_color = color_debug
     output_debug = debug
     if output_debug:
-        print(colored(f"[ {label} ]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
+        print(colored(f"[{label}]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
 
 
 def logerr(*args, **kwargs):
     global color_error
     label = "ERROR"
     label_color = color_error
-    print(colored(f"[ {label} ]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
+    print(colored(f"[{label}]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
 
 
 def logwarn(*args, **kwargs):
     global color_warning
     label = "WARNING"
     label_color = color_warning
-    print(colored(f"[ {label} ]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
+    print(colored(f"[{label}]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
 
 
 def show_usage(argument_parser):
