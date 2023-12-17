@@ -112,14 +112,6 @@ def logwarn(*args, **kwargs):
     print(colored(f"[{label}]", label_color), " ".join(map(str, args)), **kwargs, file=sys.stderr)
 
 
-def show_usage(argument_parser):
-    if argument_parser is None or not isinstance(parser, argparse.ArgumentParser):
-        alert = f"show_usage: invalid parser provided, must provide valid ArgumentParser object"
-        raise TypeError(alert)
-    argument_parser.print_help()
-    print("")
-
-
 def exit_error(code: int):
     # Add custom error logging or messages here
     sys.exit(code)
