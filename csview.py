@@ -373,7 +373,7 @@ def guess_delimiter(file_contents: str) -> str:
 
 
 # Colorize the columns of a row and return a new list of the colorized strings
-def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = False, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
+def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = False, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT, dim_color: bool = False, underline_color: bool = False) -> list[str]:
     """
     Given a list of strings representing a single row of a CSV/TSV file, format and colorize each column,
     then return the list of formatted strings.
@@ -394,6 +394,10 @@ def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = Fals
         If true, use bold colors. If false, use regular colors.
     plain_text: bool
         If true, don't colorize the output. If false, use the standard colors.
+    dim_color: bool
+        If true, try to use darker/dimmer colors. If false, use the standard colors.
+    underline_color: bool
+        If true, underline the column values. If false, do not underline column values.
 
     Returns
     -------
@@ -413,7 +417,7 @@ def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = Fals
             color = colors[i % len(colors)]
             # Print the field colorized and padded to the column width
             # print(colorize(trimmed_field.ljust(max_widths[i]), color), end=output_separator)
-            color_row.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, True, plain_text))
+            color_row.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, colors_bold, plain_text, dim_color, underline_color))
 
     return color_row
 
