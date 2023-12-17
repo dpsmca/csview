@@ -39,7 +39,7 @@ DEFAULT_BOLD = False
 DEFAULT_PLAIN_TEXT = False
 DEFAULT_QUOTE_EMPTY = False
 DEFAULT_HIDE_TITLE = False
-COLOR_TITLE_TEXT = "black"
+COLOR_TITLE_TEXT = "light_grey"
 COLOR_TITLE_BG = "on_light_grey"
 
 # Define a list of colors to be used for the columns.
@@ -476,7 +476,8 @@ if __name__ == "__main__":
                 if title_blank_space > 0:
                     pager_title_text += " " * title_blank_space
                 # pager_title = ANSI(colored(pager_title_text, "black", "on_light_grey", attrs=["bold"]))
-                pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, COLOR_TITLE_BG))
+                # pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, COLOR_TITLE_BG, attrs=["underline"]))
+                pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, attrs=["underline"]))
                 pager.titlebar_tokens = pager_title
                 pager.display_titlebar = True
             pager.add_source(FormattedTextSource(ANSI(generate_paged_content(colorized_lines))))
