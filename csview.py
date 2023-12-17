@@ -422,10 +422,9 @@ def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = Fals
     return color_row
 
 
-# Main function to display the CSV/TSV file
-# def display_file(filename, column_delimiter=',', output_separator="\t"):
 def format_file(file_contents: str, output_separator: str = "\t", quote_empty: bool = False, column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
     """
+    Primary function for formatting CSV/TSV file contents.
     Given contents of a CSV/TSV file, analyze the file and format the output:
     - Columns will be aligned and padded
     - Column values will be colored individually for visual distinctiveness
