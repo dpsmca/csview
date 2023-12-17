@@ -45,6 +45,18 @@ DEFAULT_QUOTE_EMPTY = False
 DEFAULT_HIDE_TITLE = False
 COLOR_TITLE_TEXT = "light_grey"
 COLOR_TITLE_BG = "on_light_grey"
+COLOR_COMMAND = "light_blue"
+COLOR_ARG_REQUIRED = "light_yellow"
+COLOR_ARG_OPTIONAL = "green"
+COLOR_ARG_POSTL_REQ = {"color": "light_yellow", "attrs": ["bold"]}
+COLOR_ARG_POSTL_OPT = {"color": "light_green", "attrs": ["bold"]}
+COLOR_HELP = "blue"
+COLOR_DYN_HELP = "blue"
+COLOR_GROUP = "cyan"
+# COLOR_DESCRIPTION = "light_magenta"
+COLOR_PROGRAM_TITLE = "light_blue"
+COLOR_DESCRIPTION = "yellow"
+
 
 # Define a list of colors to be used for the columns.
 # Available text colors:
