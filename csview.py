@@ -503,17 +503,21 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
         comment_char = colorize(cmt_char, color_comment, colors_bold, plain_text)
         uncommented = list(map(lambda line: line.strip('#').strip(), comments))
         splits = list(map(lambda line: line.split(delim), uncommented))
+
+        # Whether we should dim and/or underline pseudo-header columns
+        ph_dim = False
+        ph_ul = False
         for row in splits:
             if len(row) == num_columns:
                 # This comment row has identical number of columns as data does, we should color it
                 comments_have_header = True
-                color_comment_row = colorize_row(row, max_widths, quote_empty, left_padding, right_padding, colors_bold, plain_text)
+                color_comment_row = colorize_row(row, max_widths, quote_empty, left_padding, right_padding, colors_bold, plain_text, ph_dim, ph_ul)
                 row_text = comment_char + output_separator.join(color_comment_row)
                 output_comments.append(row_text)
             else:
                 # This comment row doesn't match data rows, color it as a comment
                 comment_row_text = cmt_char + output_separator.join(row)
-                output_comments.append(colorize(comment_row_text.strip(), color_comment, colors_bold, plain_text))
+                output_comments.append(colorize(comment_row_text.strip(), color_comment, colors_bold, plain_text, False, False))
 
     if comments_have_header:
         # We colorized a comment row as a header, so we need to add padding to the
