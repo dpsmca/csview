@@ -461,36 +461,63 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
     # for line in comment_lines:
     #     print(colorize(line.strip(), color_comment))
     # print(colorize(comments, color_comment))
+    comments: list[str] = list(comment_lines)
+    output_comments: list[str] = list()
+    output_data: list[str] = list()
     output: list[str] = list()
-    for comment_line in comment_lines:
-        output.append(colorize(comment_line.strip(), color_comment, colors_bold, plain_text))
+    # for comment_line in comment_lines:
+    #     comments.append(colorize(comment_line.strip(), color_comment, colors_bold, plain_text))
 
     max_widths = get_max_widths(file_contents, delim)
 
     reader = csv.reader(data_rows, delimiter=delim)
 
+    num_columns = 0
     if reader is not None and max_widths is not None and len(max_widths) > 0:
-        rows: list[str] = list()
-        for row in reader:
-            row_output: list[str] = list()
-            for i, field in enumerate(row):
-                trimmed_field = field.strip()
-                if trimmed_field == "" and quote_empty:
-                    trimmed_field = '""'
-                # Get the appropriate color for the current column
-                color = colors[i % len(colors)]
-                # Print the field colorized and padded to the column width
-                # print(colorize(trimmed_field.ljust(max_widths[i]), color), end=output_separator)
-                if colors_bold:
-                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, True, plain_text))
-                else:
-                    row_output.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, False, plain_text))
-            output.append(output_separator.join(row_output))
+        for i, row in enumerate(reader):
+            if i == 0:
+                num_columns = len(row)
+            row_output = colorize_row(row, max_widths, quote_empty, left_padding, right_padding, colors_bold, plain_text)
+            output_data.append(output_separator.join(row_output))
 
     else:
         alert = "Could not determine TSV/CSV dialect to use with input file"
         logerr(alert)
         exit_error(1)
+
+    comments_have_header = False
+    if num_columns > 0 and len(comments) > 0:
+        # Check comments to see if there's a column-for-column match in one of them.
+        # If so, it's probably a header and we should colorize the columns to match.
+        # header_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line == '' or line[0] == '#', file_lines))))
+        cmt_char = "# "
+        comment_char = colorize(cmt_char, color_comment, colors_bold, plain_text)
+        uncommented = list(map(lambda line: line.strip('#').strip(), comments))
+        splits = list(map(lambda line: line.split(delim), uncommented))
+        for row in splits:
+            if len(row) == num_columns:
+                # This comment row has identical number of columns as data does, we should color it
+                comments_have_header = True
+                color_comment_row = colorize_row(row, max_widths, quote_empty, left_padding, right_padding, colors_bold, plain_text)
+                row_text = comment_char + output_separator.join(color_comment_row)
+                output_comments.append(row_text)
+            else:
+                # This comment row doesn't match data rows, color it as a comment
+                comment_row_text = cmt_char + output_separator.join(row)
+                output_comments.append(colorize(comment_row_text.strip(), color_comment, colors_bold, plain_text))
+
+    if comments_have_header:
+        # We colorized a comment row as a header, so we need to add padding to the
+        # first column to match the "# " in front of the header row, or they will
+        # no longer align
+        first_col_left_padding = "  "
+        output_data = list(map(lambda line: first_col_left_padding + line, output_data))
+
+    # Join comment and data rows into one big output list
+    for cmt_row in output_comments:
+        output.append(cmt_row)
+    for data_row in output_data:
+        output.append(data_row)
 
     return output
 
