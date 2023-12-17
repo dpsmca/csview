@@ -930,7 +930,7 @@ if __name__ == "__main__":
                     pager_title_text += " " * title_blank_space
                 # pager_title = ANSI(colored(pager_title_text, "black", "on_light_grey", attrs=["bold"]))
                 # pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, COLOR_TITLE_BG, attrs=["underline"]))
-                pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, attrs=["underline"]))
+                pager_title = ANSI(colored(pager_title_text, COLOR_TITLE_TEXT, attrs=["underline", "dark"]))
                 pager.titlebar_tokens = pager_title
                 pager.display_titlebar = True
             pager.add_source(FormattedTextSource(ANSI(generate_paged_content(colorized_lines))))
