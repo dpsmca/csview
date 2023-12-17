@@ -531,46 +531,47 @@ def generate_paged_content(file_lines: list[str]) -> str:
 
 if __name__ == "__main__":
     '''
-    CSView: Given a CSV/TSV filename (or CSV/TSV content), display or output it with aligned and colorized columns.
+    CSView: Given a CSV/TSV filename (or CSV/TSV content on stdin), display or output it with aligned and colorized columns.
     '''
 
-    HELP_COLOR = "blue"
-    DYN_HELP_COLOR = "blue"
-    GROUP_COLOR = "cyan"
-    # DESCRIPTION_COLOR = "light_magenta"
-    DESCRIPTION_COLOR = "yellow"
+    reading_from_stdin = False
 
-    version_docstring = PROGRAM_NAME
-    version_docstring += f" v{VERSION} "
+    version_string = f"v{VERSION}"
+    version_docstring = f"{PROGRAM_NAME} {version_string}"
+    version_title = f"{PROGRAM_TITLE} {version_string}"
 
-    description_separator = f"Output separator: character to use to separate columns in output. Default is "
+    description_separator = f"Output separator: character to use to separate columns in output. (Default: "
     if DEFAULT_SEPARATOR == "\t":
         description_separator += "tab character"
     elif DEFAULT_SEPARATOR == " ":
-        description_separator += "' ' (space character)"
+        description_separator += "space character"
     else:
         description_separator += f"\"{DEFAULT_SEPARATOR}\""
+    description_separator += ")"
 
-    program_docstring = colored(f"{PROGRAM_TITLE}: Given a CSV/TSV file (or file contents), display it with aligned and colorized columns, or output it for further processing.", DESCRIPTION_COLOR, attrs=["bold"])
+    program_title = ITALIC + colored(version_title, COLOR_PROGRAM_TITLE, attrs=["bold"]) + NOITALIC
+    program_docstring = colored(f"Given a CSV/TSV file (or file contents), display it with aligned and colorized columns, or output it for further processing.", COLOR_DESCRIPTION, attrs=["bold"])
+    program_docstring = f"{program_title}: {program_docstring}"
     parser = argparse.ArgumentParser(description=program_docstring, add_help=False)
-    positional_args = parser.add_argument_group(colored("Required options", GROUP_COLOR))
-    input_args = parser.add_argument_group(colored("Input options", GROUP_COLOR))
-    output_args = parser.add_argument_group(colored("Output options", GROUP_COLOR))
-    meta_args = parser.add_argument_group(colored("Testing, debugging, and miscellaneous parameters", GROUP_COLOR))
-    positional_args.add_argument('arg_input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path", HELP_COLOR))
-    # query_args.add_argument('-i', '--input', required=False, type=str, dest="arg_input_file", default=None, help=colored("Input TSV/CSV file", HELP_COLOR))
-    input_args.add_argument('-d', '--delimiter', required=False, type=str, dest="arg_delimiter", default=None, help=colored("Delimiter character used by input file if not ',' or tab", HELP_COLOR))
-    output_args.add_argument('-t', '--title-hide', required=False, dest="arg_title_hide", action='store_true', default=DEFAULT_HIDE_TITLE, help=colored("Hide the title bar (don't show file name at top)", HELP_COLOR))
-    output_args.add_argument('-p', '--print', required=False, dest="arg_print_output", action='store_true', default=DEFAULT_PRINT_OUTPUT, help=colored("Print output to terminal instead of displaying in pager", HELP_COLOR))
-    output_args.add_argument('-q', '--quote-empty', required=False, dest="arg_empty_quotes", action='store_true', default=DEFAULT_QUOTE_EMPTY, help=colored(f"Fill empty columns with \"\" (Default: false)", HELP_COLOR))
-    output_args.add_argument('-b', '--bold', required=False, dest="arg_bold_colors", action='store_true', default=DEFAULT_BOLD, help=colored(f"Use bold colors for columns (Default: {DEFAULT_BOLD})", HELP_COLOR))
-    output_args.add_argument('-n', '--no-color', required=False, dest="arg_no_color", action='store_true', default=DEFAULT_PLAIN_TEXT, help=colored(f"Do not colorize output, only align columns (Default: {DEFAULT_PLAIN_TEXT})", HELP_COLOR))
-    output_args.add_argument('-s', '--separator', required=False, type=str, dest="arg_separator", default=None, help=colored(description_separator, HELP_COLOR))
-    output_args.add_argument('-r', '--right-pad', required=False, type=int, dest="arg_padding_right", default=PADDING_RIGHT, help=colored(f"Number of spaces to add to the right of each column for padding. (Default: {PADDING_RIGHT})", HELP_COLOR))
-    output_args.add_argument('-l', '--left-pad', required=False, type=int, dest="arg_padding_left", default=PADDING_LEFT, help=colored(f"Number of spaces to add to the left of each column for padding. (Default: {PADDING_LEFT})", HELP_COLOR))
-    meta_args.add_argument('-D', '--debug', required=False, dest="debug", action='store_true', help=colored("Show debug information and intermediate steps", HELP_COLOR))
-    meta_args.add_argument('-v', '--version', action='version', version=version_docstring, help=colored("Show program's version number and exit", HELP_COLOR))
-    meta_args.add_argument('-h', '--help', required=False, dest="show_help", action='store_true', help=colored("Show this help message and exit", HELP_COLOR))
+    positional_args = parser.add_argument_group(colored("Arguments", COLOR_GROUP))
+    input_args = parser.add_argument_group(colored("Options (input)", COLOR_GROUP))
+    output_args = parser.add_argument_group(colored("Options (output)", COLOR_GROUP))
+    meta_args = parser.add_argument_group(colored("Options (miscellaneous)", COLOR_GROUP))
+    # positional_args.add_argument('input_file', nargs='?', default=DEFAULT_INPUT, help=colored("Input file path. If not provided, will attempt to read data from stdin", COLOR_HELP))
+    positional_args.add_argument('input_file', nargs='?', help=colored("Input file path. If not provided, will attempt to read data from standard input.", COLOR_HELP))
+    # query_args.add_argument('-i', '--input', required=False, type=str, dest="input_file", default=None, help=colored("Input TSV/CSV file", COLOR_HELP))
+    input_args.add_argument('-D', '--delimiter', required=False, type=str, dest="delimiter", default=None, help=colored("Input delimiter: character used to separate columns in input, if input is not standard CSV/TSV format.", COLOR_HELP))
+    output_args.add_argument('-t', '--title-hide', required=False, dest="title_hide", action='store_true', default=DEFAULT_HIDE_TITLE, help=colored("Hide the title bar (don't show file name at top of pager).", COLOR_HELP))
+    output_args.add_argument('-p', '--print', required=False, dest="print_output", action='store_true', default=DEFAULT_PRINT_OUTPUT, help=colored("Print output to terminal instead of displaying in pager.", COLOR_HELP))
+    output_args.add_argument('-q', '--quote-empty', required=False, dest="empty_quotes", action='store_true', default=DEFAULT_QUOTE_EMPTY, help=colored(f"Show empty columns as \"\" (Default: {DEFAULT_QUOTE_EMPTY}).", COLOR_HELP))
+    output_args.add_argument('-b', '--bold', required=False, dest="bold_colors", action='store_true', default=DEFAULT_BOLD, help=colored(f"Use bold colors for columns (Default: {DEFAULT_BOLD}).", COLOR_HELP))
+    output_args.add_argument('-n', '--no-color', required=False, dest="no_color", action='store_true', default=DEFAULT_PLAIN_TEXT, help=colored(f"Do not colorize output, only align columns (Default: {DEFAULT_PLAIN_TEXT}).", COLOR_HELP))
+    output_args.add_argument('-s', '--separator', required=False, type=str, dest="separator", default=None, help=colored(description_separator, COLOR_HELP))
+    output_args.add_argument('-r', '--right-pad', required=False, type=int, dest="padding_right", default=PADDING_RIGHT, help=colored(f"Number of spaces to add to the right of each column for padding. (Default: {PADDING_RIGHT}).", COLOR_HELP))
+    output_args.add_argument('-l', '--left-pad', required=False, type=int, dest="padding_left", default=PADDING_LEFT, help=colored(f"Number of spaces to add to the left of each column for padding. (Default: {PADDING_LEFT}).", COLOR_HELP))
+    meta_args.add_argument('-d', '--debug', required=False, dest="debug", action='store_true', help=colored("Show debug information and intermediate steps.", COLOR_HELP))
+    meta_args.add_argument('-v', '--version', action='version', version=version_docstring, help=colored("Show program's version number and exit.", COLOR_HELP))
+    meta_args.add_argument('-h', '--help', required=False, dest="show_help", action='store_true', help=colored("Show this help message and exit.", COLOR_HELP))
 
     inpArgs = parser.parse_args()
     show_help = inpArgs.show_help
@@ -586,16 +587,16 @@ if __name__ == "__main__":
         show_usage(parser)
         exit_error(0)
 
-    arg_input = inpArgs.arg_input_file
-    arg_delim = inpArgs.arg_delimiter
-    arg_sep = inpArgs.arg_separator
-    arg_pad_right = inpArgs.arg_padding_right
-    arg_pad_left = inpArgs.arg_padding_left
-    arg_title_hide = inpArgs.arg_title_hide
-    arg_print = inpArgs.arg_print_output
-    arg_empty_quotes = inpArgs.arg_empty_quotes
-    arg_bold = inpArgs.arg_bold_colors
-    arg_no_color = inpArgs.arg_no_color
+    arg_input = inpArgs.input_file if not reading_from_stdin and good_string(inpArgs.input_file) else DEFAULT_INPUT
+    arg_delim = inpArgs.delimiter
+    arg_sep = inpArgs.separator
+    arg_pad_right = inpArgs.padding_right
+    arg_pad_left = inpArgs.padding_left
+    arg_title_hide = inpArgs.title_hide
+    arg_print = inpArgs.print_output
+    arg_empty_quotes = inpArgs.empty_quotes
+    arg_bold = inpArgs.bold_colors
+    arg_no_color = inpArgs.no_color
 
     if bad_string(arg_input):
         arg_input = inpArgs.input_file
