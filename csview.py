@@ -144,13 +144,19 @@ def bad_list(value: Any) -> bool:
 
 
 # Wrap text with the specified color
-def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool = False):
+def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool = False, dim: bool = False, underline: bool = False):
+    default_attrs: list[str] = []
+    color_attrs = default_attrs
+    if bold:
+        color_attrs.append("bold")
+    if dim:
+        color_attrs.append("dark")
+    if underline:
+        color_attrs.append("underline")
     if plain_text:
         return text
-    if bold:
-        return colored(text, color, attrs=['bold'])
     else:
-        return colored(text, color)
+        return colored(text, color, attrs=color_attrs)
 
 
 def get_term_size(size_type: str = "all") -> int:
