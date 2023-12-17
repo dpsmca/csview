@@ -521,34 +521,6 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
 
     return output
 
-    # with open(filename, 'r', newline='') as csvfile:
-    #     # dialect = csv.Sniifer().sniff(csvfile.read(), delimiters=";,\t")
-    #     reader: csv.reader
-    #     if delim is not None:
-    #         reader = csv.reader(csvfile, delimiter=delim)
-    #         max_widths = get_max_widths(filename, delim)
-    #     # else:
-    #     #     delim = guess_delimiter(filename)
-    #     #     # dialect = csv.Sniffer().sniff(csvfile.read())
-    #     #     # column_delimiter = dialect.delimiter
-    #     #     csvfile.seek(0)
-    #     #     max_widths = get_max_widths(filename, delimiter)
-    #     #     csvfile.seek(0)
-    #     #     reader = csv.reader(csvfile, delimiter=delim)
-    #     if reader is not None and max_widths is not None and len(max_widths) > 0:
-    #         # Get max widths for columns
-    #         for row in reader:
-    #             if row
-    #             for i, field in enumerate(row):
-    #                 # Get the appropriate color for the current column
-    #                 color = colors[i % len(colors)]
-    #                 # Print the field colorized and padded to the column width
-    #                 print(colorize(field.ljust(max_widths[i]), color), end=output_separator)
-    #             print()  # Newline after each row
-    #     else:
-    #         alert = "Could not determine TSV/CSV dialect to use with input file"
-    #         logerr(alert)
-    #         exit_error(1)
 
 def generator_paged_content(file_lines: list[str]) -> Generator[str, None, None]:
     """
