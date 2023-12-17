@@ -19,6 +19,7 @@ try:
     import argparse
     import ntpath
     from typing import Any, AnyStr, Union, Type
+    from collections.abc import Generator
     from termcolor import colored, cprint
     import colorama
     from pypager.source import StringSource, FormattedTextSource
@@ -313,8 +314,7 @@ def format_file(filename: str, output_separator: str = "\t", quote_empty: bool =
     #         logerr(alert)
     #         exit_error(1)
 
-
-def generator_paged_content(file_lines: list[str]):
+def generator_paged_content(file_lines: list[str]) -> Generator[str, None, None]:
     """
     This is a function that generates content on the fly.
     It's called when the pager needs to display more content.
