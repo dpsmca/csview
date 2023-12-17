@@ -366,6 +366,52 @@ def guess_delimiter(file_contents: str) -> str:
         raise TypeError(alert)
 
 
+# Colorize the columns of a row and return a new list of the colorized strings
+def colorize_row(row: list[str], max_widths: list[int], quote_empty: bool = False, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
+    """
+    Given a list of strings representing a single row of a CSV/TSV file, format and colorize each column,
+    then return the list of formatted strings.
+
+    Parameters
+    ----------
+    row : list[str]
+        A list of strings where each element is the value of a CSV/TSV column.
+    max_widths: list[int]
+        A list of integers where each element is the maximum width of the corresponding CSV/TSV column.
+    quote_empty: bool
+        If false, empty columns will be represented as empty strings. If true, represent them with a pair of double quotes.
+    left_padding: int
+        The number of spaces to prepend to each column, for spacing the output.
+    right_padding: int
+        The number of spaces to append to each column, for spacing the output.
+    colors_bold: bool
+        If true, use bold colors. If false, use regular colors.
+    plain_text: bool
+        If true, don't colorize the output. If false, use the standard colors.
+
+    Returns
+    -------
+    list[str]
+        A list of strings where each element is the colorized and formatted version of the text of the corresponding input row.
+
+    """
+    color_row: list[str] = list()
+    if type(row) == list and len(row) > 0:
+        padding_left_str = " " * left_padding
+        padding_right_str = " " * right_padding
+        for i, field in enumerate(row):
+            trimmed_field = field.strip()
+            if trimmed_field == "" and quote_empty:
+                trimmed_field = '""'
+            # Get the appropriate color for the current column
+            color = colors[i % len(colors)]
+            # Print the field colorized and padded to the column width
+            # print(colorize(trimmed_field.ljust(max_widths[i]), color), end=output_separator)
+            color_row.append(colorize(padding_left_str + trimmed_field.ljust(max_widths[i]) + padding_right_str, color, True, plain_text))
+
+    return color_row
+
+
 # Main function to display the CSV/TSV file
 # def display_file(filename, column_delimiter=',', output_separator="\t"):
 def format_file(file_contents: str, output_separator: str = "\t", quote_empty: bool = False, column_delimiter: str = None, left_padding: int = PADDING_LEFT, right_padding: int = PADDING_RIGHT, colors_bold: bool = DEFAULT_BOLD, plain_text: bool = DEFAULT_PLAIN_TEXT) -> list[str]:
