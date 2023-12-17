@@ -4,6 +4,7 @@ import sys
 import os
 import csv
 import traceback
+import re
 # import pandas as pd
 
 RED = '\033[91m'
@@ -17,6 +18,7 @@ NC = '\033[0m'
 
 try:
     import argparse
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     import ntpath
     from typing import Any, AnyStr, Union, Type
     from collections.abc import Generator
