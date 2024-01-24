@@ -5,33 +5,43 @@ Aligns and colorizes columns in a CSV or TSV file, then displays the result in a
 
 ### Installation
 
+- 
 ```bash
-pip requirements.txt
+./install.sh
 ```
 
 ### Usage
 
 - Build standalone binary on Linux or macOS:
-  ```
-  ./install.sh
+  ```bash
+  $ ./install.sh
+  # ...
+  # <build output>
+  # ....
+  $ ./csview ./samples/bioinformatics.csv
   ```
 - Build standalone binary on Windows:
+  ```bash
+  $ install.bat
+  # ...
+  # <build output>
+  # ...
+  $ csview samples\bioinformatics.csv
   ```
-  install.bat
-  ```
-- Or run directly with Python:
-  ```
-  python3 csview.py <input file>
+- Or run directly on any platform that has Python 3.x available:
+  ```bash
+  $ pip install -r requirements.txt
+  $ python3 csview.py samples/bioinformatics.csv
   ```
 
 ### Notes
 
 - If you use iTerm2, and you are unable to select and copy text in the pager output:
   - Go to iTerm2 Preferences (&#8984;-,)
-  - Go to the **Profiles** tab
+  - Go to the **"Profiles"** tab
   - Select the profile you're using (defaults to "Default")
-  - Select the **Terminal** tab
-  - Uncheck the **Enable mouse reporting** checkbox
+  - Select the **"Terminal"** tab
+  - Uncheck the **"Enable mouse reporting"** checkbox
 
 ### Options
 
