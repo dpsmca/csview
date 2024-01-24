@@ -24,6 +24,15 @@ pip requirements.txt
   python3 csview.py <input file>
   ```
 
+### Notes
+
+- If you use iTerm2, and you are unable to select and copy text in the pager output:
+  - Go to iTerm2 Preferences (&#8984;-,)
+  - Go to the **Profiles** tab
+  - Select the profile you're using (defaults to "Default")
+  - Select the **Terminal** tab
+  - Uncheck the **Enable mouse reporting** checkbox
+
 ### Options
 
 ```bash
