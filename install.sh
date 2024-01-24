@@ -3,7 +3,7 @@
 TERM="xterm-256color"
 
 PROGRAM_NAME="csview"
-PROGRAM_VERSION="1.0.0"
+VERSION_FILE="_version_.txt"
 PROGRAM_TITLE="CSView"
 
 ##################################################
@@ -48,6 +48,8 @@ export MV="$(command -v gmv || command -v mv)"
 export RM="$(command -v grm || command -v rm)"
 export LN="$(command -v gln || command -v ln)"
 PYTHON3="$(command -v python3)"
+
+PROGRAM_VERSION="$(${CAT} "${VERSION_FILE}" | ${XARGS})"
 
 ##################################################
 # Colors
