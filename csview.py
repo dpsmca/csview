@@ -35,7 +35,7 @@ except ImportError as e:
 
 PROGRAM_TITLE = "CSView"
 PROGRAM_NAME = PROGRAM_TITLE.lower()
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_INPUT = "/dev/stdin"
 DEFAULT_SEPARATOR = " "
 PADDING_LEFT = 0
@@ -934,6 +934,7 @@ if __name__ == "__main__":
             # Show output in pager
             pager = Pager()
             pager.application.mouse_support = False
+            pager.application.output.disable_mouse_support()
             if hide_title:
                 pager.display_titlebar = False
             else:
