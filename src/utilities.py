@@ -120,7 +120,8 @@ def strmap(item_list: Iterable[Any]) -> list[str]:
 def strip_quotes(s: str) -> str:
     if string_bad(s):
         return None
-    unquoted = re.sub(r"['\"`]+", "", s)
+    # unquoted = re.sub(r"['\"`]+", "", s)
+    unquoted = s.strip("\"'` \t")
     if re.search(r"\s", unquoted):
         return f"\"{unquoted}\""
     else:
