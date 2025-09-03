@@ -1,0 +1,14 @@
+# Sample CSV file with comments and some empty columns
+# Please maintain the order of the following columns
+# ^ indicates match at the beginning of string
+# {{VARIABLE_NAME}} will be substituted at run-time
+# .* is Bashism for match zero or more characters
+# Data_File_Tag, Test_Sample_Type, Output_Path, Parameter_Set_1, Parameter_Set_2, Sample_Type, Renamed_Output_Dir, Category, Stage
+_DNA, , {{ROOT}}/Genome/DNA/{{YEAR}}, , , None, None, None, dev
+_RNA, Genome, {{ROOT}}/Genome/RNA/{{YEAR}}, , None, None, None, None, dev
+_Coll, Collagen_Fibronectin, {{ROOT}}/Collagen/Fibronectin/{{YEAR}}, , None, None, None, None, dev
+_Fibril, Fibrillary, {{ROOT}}/Fibrillary/{{YEAR}}, , None, None, None, None, dev
+^Assay1Standard, AssayStandard, {{ROOT}}/Quality/Assay_Standards/{{YEAR}}, , None, None, , Standards, dev
+^HelaStandard, Hela_Standard, {{ROOT}}/Quality/Hela_Standards/{{YEAR}}, , None, None, NonClinicalFolder, HeLa, dev
+^BatchControl, Batch_Control_Standards, {{ROOT}}/Quality/BatchControls/{{SAMPLE_TYPE}}/{{YEAR}}, , None, IG4|Lambda|Kappa|TSR, NonClinicalFolder, IG4|AL-Lambda|AL-Kappa|ATSR, dev
+None, Assay1, {{ROOT}}/Patient/Assay1/{{YEAR}}, Assay1, Assay1_DrugDB, None, None, None, dev

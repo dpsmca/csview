@@ -2,10 +2,20 @@
 
 import sys
 import os
+from os import terminal_size
 import csv
 import traceback
 import re
-# import pandas as pd
+import itertools
+from utilities_log import logMsg, logErr, logWarn, logDbg, logDryRun, OPTIONS
+from utilities import *
+
+from typing import Any, AnyStr, Callable, Type, TypedDict, Union, Tuple
+from collections import OrderedDict
+from collections.abc import Iterable
+
+DEFAULT_DELIMITERS = [ "\t", "," ]
+
 
 RED = '\033[91m'
 BOLD = '\033[1m'
@@ -35,7 +45,7 @@ except ImportError as e:
 
 PROGRAM_TITLE = "CSView"
 PROGRAM_NAME = PROGRAM_TITLE.lower()
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_INPUT = "/dev/stdin"
 DEFAULT_SEPARATOR = " "
 PADDING_LEFT = 0
@@ -159,8 +169,13 @@ def colorize(text: str, color: str, bold: bool = DEFAULT_BOLD, plain_text: bool 
         return colored(text, color, attrs=color_attrs)
 
 
-def get_term_size(size_type: str = "all") -> int:
-    size: {"columns": int, "lines": int} = os.get_terminal_size()
+class TermSize(TypedDict):
+    columns: int
+    lines: int
+
+
+def get_term_size(size_type: str = "all") -> int|terminal_size:
+    size = os.get_terminal_size()
     if good_string(size_type):
         stype = size_type.lower()
         if stype == "all":
@@ -173,22 +188,58 @@ def get_term_size(size_type: str = "all") -> int:
             alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
             logerr(alert)
             raise TypeError(alert)
+    else:
+        alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
+        logerr(alert)
+        raise TypeError(alert)
 
 
-def get_file_contents(filename: str) -> str:
+def parse_range(range_in: str) -> Tuple[int, int]:
+    line_start = 0
+    line_end = None
+    if string_bad(range_in):
+        return None
+    if ':' in range_in:
+        split = range_in.split(":")
+        line_start = int(split[0])
+        if len(split) == 2 and string_good(split[1]):
+            line_end = int(split[1])
+    if line_start < 0:
+        line_start = 0
+    return line_start, line_end
+
+
+def get_file_contents(filename: str, range_in: str = None) -> str:
     file_contents: str = ""
     if bad_string(filename):
         alert = "get_file_contents: please provide a filename to read"
         logerr(alert)
         raise TypeError(alert)
 
-    if ntpath.exists(filename):
-        with open(filename, 'r', newline='') as csvfile:
-            file_contents = csvfile.read()
-    else:
+    if not ntpath.exists(filename):
         alert = f"get_file_contents: could not find file '{filename}'"
         logerr(alert)
         raise TypeError(alert)
+
+    file_contents: str = ""
+    linerange = parse_range(range_in)
+    logdbg(f"get_file_contents: linerange is:", linerange)
+    if linerange is not None:
+        # Count lines
+        line_count = 0
+        line_start = linerange[0]
+        line_end = linerange[1]
+        if line_start > 0:
+            line_start -= 1
+        with open(filename, 'r', newline='') as f:
+            line_count = sum(1 for _ in f)
+            logdbg(f"File '{filename}' line count: {line_count}")
+            f.seek(0)
+            for line in itertools.islice(f, line_start, line_end):
+                file_contents += line
+    else:
+        with open(filename, 'r', newline='') as csvfile:
+            file_contents = csvfile.read()
 
     return file_contents
 
@@ -218,7 +269,7 @@ def get_data_lines(file_contents: str) -> str:
     #     file_lines = list(csvfile.readlines())
     #     data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
     file_lines = list(file_contents.strip().split("\n"))
-    data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
+    data_rows = list(map(lambda line: line.strip(" "), list(filter(lambda line: line.strip(" ") != '' and line[0] != '#', file_lines))))
     output = "\n".join(data_rows)
     return output
 
@@ -242,7 +293,7 @@ def get_max_column_widths(lines: list[str], column_delimiter: str) -> list[int]:
 
     """
     widths: list[int] = list()
-    rows: list[list[str]] = list(map(lambda line: line.strip().split(column_delimiter), lines))
+    rows: list[list[str]] = list(map(lambda line: line.strip(" ").split(column_delimiter), lines))
     logdbg(f"get_max_column_widths: rows:\n{rows}")
     # reader = csv.reader(data_lines, delimiter=column_delimiter)
     for rownum, row in enumerate(rows):
@@ -285,7 +336,7 @@ def get_max_widths(file_contents: str, column_delimiter: str) -> list[int]:
     data = get_data_lines(file_contents)
     comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments.split("\n") if len(comments) > 0 else list()
     data_lines = data.split("\n")
     lines_to_consider: list[str] = list()
 
@@ -356,15 +407,25 @@ def guess_delimiter(file_contents: str) -> str:
     # with open(filename, 'r', newline='') as csvfile:
     #     csvfile.seek(0)
     #     file_lines = list(csvfile.readlines())
-    good_lines = filter(lambda line: line != '' and line[0] != '#', file_lines)
+    good_lines = list(filter(lambda line: line.strip() != '' and line.strip()[0] != '#', file_lines))
     input_contents = "\n".join(good_lines)
-    dialect = csv.Sniffer().sniff(input_contents)
+    test_line = good_lines[len(good_lines) - 1] if len(good_lines) > 0 else ""
+    try:
+        dialect = csv.Sniffer().sniff(test_line, delimiters=DEFAULT_DELIMITERS)
+    except Exception:
+        dialect = None
     if dialect is None:
         alert = "guess_delimiter: could not determine file delimiter character"
         logerr(alert)
         raise TypeError(alert)
     output_delimiter = dialect.delimiter
     if output_delimiter is not None:
+        if output_delimiter not in DEFAULT_DELIMITERS:
+            alert = f'guess_delimiter: guessed delimiter "{output_delimiter}" is not in list of allowed delimiters: [ '
+            alert += ', '.join(f'"{item}"' for item in DEFAULT_DELIMITERS)
+            alert += " ]"
+            logerr(alert)
+            raise TypeError(alert)
         return output_delimiter
     else:
         alert = f"guess_delimiter: Could not determine file delimiter"
@@ -461,11 +522,11 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
         delim = guess_delimiter(file_contents)
     logdbg(f"BOLD COLORS: {colors_bold}")
     logdbg(f"DETECTED DELIMITER: '{delim}'")
-    comments = get_comments(file_contents)
+    comments_str = get_comments(file_contents)
+    comments_str = comments_str.strip()
     data = get_data_lines(file_contents)
-    comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments_str.split("\n") if len(comments_str) > 0 else list()
     data_rows = data.split("\n")
     # for line in comment_lines:
     #     print(colorize(line.strip(), color_comment))
@@ -849,8 +910,9 @@ if __name__ == "__main__":
     output_args.add_argument('-b', '--bold', required=False, dest="bold_colors", action='store_true', default=DEFAULT_BOLD, help=colored(f"Use bold colors for columns (Default: {DEFAULT_BOLD}).", COLOR_HELP))
     output_args.add_argument('-n', '--no-color', required=False, dest="no_color", action='store_true', default=DEFAULT_PLAIN_TEXT, help=colored(f"Do not colorize output, only align columns (Default: {DEFAULT_PLAIN_TEXT}).", COLOR_HELP))
     output_args.add_argument('-s', '--separator', required=False, type=str, dest="separator", default=None, help=colored(description_separator, COLOR_HELP))
-    output_args.add_argument('-r', '--right-pad', required=False, type=int, dest="padding_right", default=PADDING_RIGHT, help=colored(f"Number of spaces to add to the right of each column for padding. (Default: {PADDING_RIGHT}).", COLOR_HELP))
-    output_args.add_argument('-l', '--left-pad', required=False, type=int, dest="padding_left", default=PADDING_LEFT, help=colored(f"Number of spaces to add to the left of each column for padding. (Default: {PADDING_LEFT}).", COLOR_HELP))
+    output_args.add_argument('-r', '--range', required=False, type=str, dest="arg_range", default=None, help=colored(f"Range (10: to show lines 10-end, :10 to show lines 1-10, 10:20 to show lines 10-20)", COLOR_HELP))
+    output_args.add_argument('-R', '--right-pad', required=False, type=int, dest="padding_right", default=PADDING_RIGHT, help=colored(f"Number of spaces to add to the right of each column for padding. (Default: {PADDING_RIGHT}).", COLOR_HELP))
+    output_args.add_argument('-L', '--left-pad', required=False, type=int, dest="padding_left", default=PADDING_LEFT, help=colored(f"Number of spaces to add to the left of each column for padding. (Default: {PADDING_LEFT}).", COLOR_HELP))
     meta_args.add_argument('-d', '--debug', required=False, dest="debug", action='store_true', help=colored("Show debug information and intermediate steps.", COLOR_HELP))
     meta_args.add_argument('-v', '--version', action='version', version=version_docstring, help=colored("Show program's version number and exit.", COLOR_HELP))
     meta_args.add_argument('-h', '--help', required=False, dest="show_help", action='store_true', help=colored("Show this help message and exit.", COLOR_HELP))
@@ -872,6 +934,7 @@ if __name__ == "__main__":
     arg_input = inpArgs.input_file if not reading_from_stdin and good_string(inpArgs.input_file) else DEFAULT_INPUT
     arg_delim = inpArgs.delimiter
     arg_sep = inpArgs.separator
+    arg_range = inpArgs.arg_range
     arg_pad_right = inpArgs.padding_right
     arg_pad_left = inpArgs.padding_left
     arg_title_hide = inpArgs.title_hide
@@ -888,6 +951,7 @@ if __name__ == "__main__":
         show_usage(parser)
         exit_error(1)
 
+    line_range = strip_quotes(arg_range) if good_string(arg_range) else None
     input_file = arg_input.strip() if good_string(arg_input) else DEFAULT_INPUT
     delimiter = arg_delim if good_string(arg_delim) else None
     separator = arg_sep if good_string(arg_sep) else DEFAULT_SEPARATOR
@@ -899,6 +963,8 @@ if __name__ == "__main__":
     bold_colors = arg_bold
     no_colors = arg_no_color
     empty_quotes = arg_empty_quotes
+
+    OPTIONS['DEBUG'] = debug
 
     # if debug:
     #     logging.basicConfig(level=logging.DEBUG)
@@ -915,7 +981,7 @@ if __name__ == "__main__":
             logerr(f"Could not read input file '{input_file}'")
             exit_error(1)
         else:
-            csv_content = get_file_contents(input_file)
+            csv_content = get_file_contents(input_file, line_range)
             file_name = os.path.basename(input_file)
             pager_title_text = f"FILE: {file_name}"
 
@@ -934,6 +1000,7 @@ if __name__ == "__main__":
             # Show output in pager
             pager = Pager()
             pager.application.mouse_support = False
+            pager.application.output.disable_mouse_support()
             if hide_title:
                 pager.display_titlebar = False
             else:

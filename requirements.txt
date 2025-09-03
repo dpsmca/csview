@@ -2,6 +2,8 @@
 # The system-specific install script will install these
 
 argparse
+pytz
+requests
 colorama
 termcolor
 pypager
