@@ -2,6 +2,7 @@
 
 import sys
 import os
+from os import terminal_size
 import csv
 import traceback
 import re
@@ -173,8 +174,8 @@ class TermSize(TypedDict):
     lines: int
 
 
-def get_term_size(size_type: str = "all") -> int:
-    size: TermSize = os.get_terminal_size()
+def get_term_size(size_type: str = "all") -> int|terminal_size:
+    size = os.get_terminal_size()
     if good_string(size_type):
         stype = size_type.lower()
         if stype == "all":
@@ -187,6 +188,10 @@ def get_term_size(size_type: str = "all") -> int:
             alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
             logerr(alert)
             raise TypeError(alert)
+    else:
+        alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
+        logerr(alert)
+        raise TypeError(alert)
 
 
 def parse_range(range: str) -> Tuple[int, int]:
