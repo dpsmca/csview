@@ -407,7 +407,7 @@ def guess_delimiter(file_contents: str) -> str:
     # with open(filename, 'r', newline='') as csvfile:
     #     csvfile.seek(0)
     #     file_lines = list(csvfile.readlines())
-    good_lines = filter(lambda line: line.strip() != '' and line.strip()[0] != '#', file_lines)
+    good_lines = list(filter(lambda line: line.strip() != '' and line.strip()[0] != '#', file_lines))
     input_contents = "\n".join(good_lines)
     test_line = good_lines[len(good_lines) - 1] if len(good_lines) > 0 else ""
     try:
