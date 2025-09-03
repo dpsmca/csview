@@ -336,7 +336,7 @@ def get_max_widths(file_contents: str, column_delimiter: str) -> list[int]:
     data = get_data_lines(file_contents)
     comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments.split("\n") if len(comments) > 0 else list()
     data_lines = data.split("\n")
     lines_to_consider: list[str] = list()
 
@@ -522,11 +522,11 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
         delim = guess_delimiter(file_contents)
     logdbg(f"BOLD COLORS: {colors_bold}")
     logdbg(f"DETECTED DELIMITER: '{delim}'")
-    comments = get_comments(file_contents)
+    comments_str = get_comments(file_contents)
+    comments_str = comments_str.strip()
     data = get_data_lines(file_contents)
-    comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments_str.split("\n") if len(comments_str) > 0 else list()
     data_rows = data.split("\n")
     # for line in comment_lines:
     #     print(colorize(line.strip(), color_comment))
