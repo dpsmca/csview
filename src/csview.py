@@ -194,19 +194,19 @@ def get_term_size(size_type: str = "all") -> int|terminal_size:
         raise TypeError(alert)
 
 
-def parse_range(range: str) -> Tuple[int, int]:
+def parse_range(range_in: str) -> Tuple[int, int]:
     line_start = 0
     line_end = None
-    if string_bad(range):
+    if string_bad(range_in):
         return None
-    if ':' in range:
-        split = range.split(":")
+    if ':' in range_in:
+        split = range_in.split(":")
         line_start = int(split[0])
         if len(split) == 2 and string_good(split[1]):
             line_end = int(split[1])
     if line_start < 0:
         line_start = 0
-    return (line_start, line_end)
+    return line_start, line_end
 
 
 def get_file_contents(filename: str, range: str = None) -> str:
