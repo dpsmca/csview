@@ -269,7 +269,7 @@ def get_data_lines(file_contents: str) -> str:
     #     file_lines = list(csvfile.readlines())
     #     data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
     file_lines = list(file_contents.strip().split("\n"))
-    data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
+    data_rows = list(map(lambda line: line.strip(" "), list(filter(lambda line: line.strip(" ") != '' and line[0] != '#', file_lines))))
     output = "\n".join(data_rows)
     return output
 
@@ -293,7 +293,7 @@ def get_max_column_widths(lines: list[str], column_delimiter: str) -> list[int]:
 
     """
     widths: list[int] = list()
-    rows: list[list[str]] = list(map(lambda line: line.strip().split(column_delimiter), lines))
+    rows: list[list[str]] = list(map(lambda line: line.strip(" ").split(column_delimiter), lines))
     logdbg(f"get_max_column_widths: rows:\n{rows}")
     # reader = csv.reader(data_lines, delimiter=column_delimiter)
     for rownum, row in enumerate(rows):
