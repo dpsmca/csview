@@ -209,7 +209,7 @@ def parse_range(range_in: str) -> Tuple[int, int]:
     return line_start, line_end
 
 
-def get_file_contents(filename: str, range: str = None) -> str:
+def get_file_contents(filename: str, range_in: str = None) -> str:
     file_contents: str = ""
     if bad_string(filename):
         alert = "get_file_contents: please provide a filename to read"
@@ -222,7 +222,7 @@ def get_file_contents(filename: str, range: str = None) -> str:
         raise TypeError(alert)
 
     file_contents: str = ""
-    linerange = parse_range(range)
+    linerange = parse_range(range_in)
     logdbg(f"get_file_contents: linerange is:", linerange)
     if linerange is not None:
         # Count lines
