@@ -2,6 +2,7 @@
 
 import sys
 import os
+from os import terminal_size
 import csv
 import traceback
 import re
@@ -173,8 +174,8 @@ class TermSize(TypedDict):
     lines: int
 
 
-def get_term_size(size_type: str = "all") -> int:
-    size: TermSize = os.get_terminal_size()
+def get_term_size(size_type: str = "all") -> int|terminal_size:
+    size = os.get_terminal_size()
     if good_string(size_type):
         stype = size_type.lower()
         if stype == "all":
@@ -187,24 +188,28 @@ def get_term_size(size_type: str = "all") -> int:
             alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
             logerr(alert)
             raise TypeError(alert)
+    else:
+        alert = f"get_term_size: valid parameters: [ all, [ width, cols ], [ height, length, rows ] ]. Unknown value: '{size_type}'"
+        logerr(alert)
+        raise TypeError(alert)
 
 
-def parse_range(range: str) -> Tuple[int, int]:
+def parse_range(range_in: str) -> Tuple[int, int]:
     line_start = 0
     line_end = None
-    if string_bad(range):
+    if string_bad(range_in):
         return None
-    if ':' in range:
-        split = range.split(":")
+    if ':' in range_in:
+        split = range_in.split(":")
         line_start = int(split[0])
         if len(split) == 2 and string_good(split[1]):
             line_end = int(split[1])
     if line_start < 0:
         line_start = 0
-    return (line_start, line_end)
+    return line_start, line_end
 
 
-def get_file_contents(filename: str, range: str = None) -> str:
+def get_file_contents(filename: str, range_in: str = None) -> str:
     file_contents: str = ""
     if bad_string(filename):
         alert = "get_file_contents: please provide a filename to read"
@@ -217,7 +222,7 @@ def get_file_contents(filename: str, range: str = None) -> str:
         raise TypeError(alert)
 
     file_contents: str = ""
-    linerange = parse_range(range)
+    linerange = parse_range(range_in)
     logdbg(f"get_file_contents: linerange is:", linerange)
     if linerange is not None:
         # Count lines
@@ -264,7 +269,7 @@ def get_data_lines(file_contents: str) -> str:
     #     file_lines = list(csvfile.readlines())
     #     data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
     file_lines = list(file_contents.strip().split("\n"))
-    data_rows = list(map(lambda line: line.strip(), list(filter(lambda line: line.strip() != '' and line[0] != '#', file_lines))))
+    data_rows = list(map(lambda line: line.strip(" "), list(filter(lambda line: line.strip(" ") != '' and line[0] != '#', file_lines))))
     output = "\n".join(data_rows)
     return output
 
@@ -288,7 +293,7 @@ def get_max_column_widths(lines: list[str], column_delimiter: str) -> list[int]:
 
     """
     widths: list[int] = list()
-    rows: list[list[str]] = list(map(lambda line: line.strip().split(column_delimiter), lines))
+    rows: list[list[str]] = list(map(lambda line: line.strip(" ").split(column_delimiter), lines))
     logdbg(f"get_max_column_widths: rows:\n{rows}")
     # reader = csv.reader(data_lines, delimiter=column_delimiter)
     for rownum, row in enumerate(rows):
@@ -331,7 +336,7 @@ def get_max_widths(file_contents: str, column_delimiter: str) -> list[int]:
     data = get_data_lines(file_contents)
     comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments.split("\n") if len(comments) > 0 else list()
     data_lines = data.split("\n")
     lines_to_consider: list[str] = list()
 
@@ -402,7 +407,7 @@ def guess_delimiter(file_contents: str) -> str:
     # with open(filename, 'r', newline='') as csvfile:
     #     csvfile.seek(0)
     #     file_lines = list(csvfile.readlines())
-    good_lines = filter(lambda line: line.strip() != '' and line.strip()[0] != '#', file_lines)
+    good_lines = list(filter(lambda line: line.strip() != '' and line.strip()[0] != '#', file_lines))
     input_contents = "\n".join(good_lines)
     test_line = good_lines[len(good_lines) - 1] if len(good_lines) > 0 else ""
     try:
@@ -517,11 +522,11 @@ def format_file(file_contents: str, output_separator: str = "\t", quote_empty: b
         delim = guess_delimiter(file_contents)
     logdbg(f"BOLD COLORS: {colors_bold}")
     logdbg(f"DETECTED DELIMITER: '{delim}'")
-    comments = get_comments(file_contents)
+    comments_str = get_comments(file_contents)
+    comments_str = comments_str.strip()
     data = get_data_lines(file_contents)
-    comments = comments.strip()
     data = data.strip()
-    comment_lines = comments.split("\n")
+    comment_lines = comments_str.split("\n") if len(comments_str) > 0 else list()
     data_rows = data.split("\n")
     # for line in comment_lines:
     #     print(colorize(line.strip(), color_comment))
